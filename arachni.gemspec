@@ -8,113 +8,113 @@
 =end
 
 Gem::Specification.new do |s|
-    require File.expand_path( File.dirname( __FILE__ ) ) + '/lib/arachni/version'
+  require File.expand_path(File.dirname(__FILE__)) + "/lib/arachni/version"
 
-    s.required_ruby_version = '>= 2.2.0'
+  s.required_ruby_version = ">= 2.2.0"
 
-    s.name              = 'arachni'
-    s.version           = Arachni::VERSION
-    s.date              = Time.now.strftime( '%Y-%m-%d' )
-    s.summary           = 'Arachni is a feature-full, modular, high-performance' +
-        ' Ruby framework aimed towards helping penetration testers and' +
-        ' administrators evaluate the security of web applications.'
+  s.name = "arachni"
+  s.version = Arachni::VERSION
+  s.date = Time.now.strftime("%Y-%m-%d")
+  s.summary = "Arachni is a feature-full, modular, high-performance" +
+              " Ruby framework aimed towards helping penetration testers and" +
+              " administrators evaluate the security of web applications."
 
-    s.homepage          = 'https://www.arachni-scanner.com'
-    s.email             = 'tasos.laskos@arachni-scanner.com'
-    s.authors           = [ 'Tasos Laskos' ]
-    s.licenses          = ['Arachni Public Source License v1.0']
+  s.homepage = "https://www.arachni-scanner.com"
+  s.email = "tasos.laskos@arachni-scanner.com"
+  s.authors = ["Tasos Laskos"]
+  s.licenses = ["Arachni Public Source License v1.0"]
 
-    s.files            += Dir.glob( 'config/**/**' )
-    s.files            += Dir.glob( 'gfx/**/**' )
-    s.files            += Dir.glob( 'lib/**/**' )
-    s.files            += Dir.glob( 'ui/**/**' )
-    s.files            += Dir.glob( 'logs/**/**' )
-    s.files            += Dir.glob( 'components/**/**' )
-    s.files            += Dir.glob( 'profiles/**/**' )
-    s.files            += Dir.glob( 'spec/**/**' )
-    s.files            += %w(Gemfile Rakefile arachni.gemspec)
-    s.test_files        = Dir.glob( 'spec/**/**' )
+  s.files += Dir.glob("config/**/**")
+  s.files += Dir.glob("gfx/**/**")
+  s.files += Dir.glob("lib/**/**")
+  s.files += Dir.glob("ui/**/**")
+  s.files += Dir.glob("logs/**/**")
+  s.files += Dir.glob("components/**/**")
+  s.files += Dir.glob("profiles/**/**")
+  s.files += Dir.glob("spec/**/**")
+  s.files += %w(Gemfile Rakefile arachni.gemspec)
+  s.test_files = Dir.glob("spec/**/**")
 
-    s.executables       = Dir.glob( 'bin/*' ).map { |e| File.basename e }
+  s.executables = Dir.glob("bin/*").map { |e| File.basename e }
 
-    s.extra_rdoc_files  = %w(README.md LICENSE.md CHANGELOG.md)
+  s.extra_rdoc_files = %w(README.md LICENSE.md CHANGELOG.md)
 
-    s.rdoc_options      = [ '--charset=UTF-8' ]
+  s.rdoc_options = ["--charset=UTF-8"]
 
-    s.add_dependency 'awesome_print',       '1.6.1'
+  s.add_dependency "awesome_print", "1.8.0"
 
-    s.add_dependency 'rack',                '1.6.4'
+  s.add_dependency "rack", "2.0.7"
 
-    # Don't specify version, messes with the packages since they always grab the
-    # latest one.
-    s.add_dependency 'bundler'
+  # Don't specify version, messes with the packages since they always grab the
+  # latest one.
+  s.add_dependency "bundler"
 
-    s.add_dependency 'concurrent-ruby',     '1.0.2'
-    s.add_dependency 'concurrent-ruby-ext', '1.0.2'
+  s.add_dependency "concurrent-ruby", "1.1.5"
+  s.add_dependency "concurrent-ruby-ext", "1.1.5"
 
-    # For compressing/decompressing system state archives.
-    s.add_dependency 'rubyzip',             '1.2.1'
+  # For compressing/decompressing system state archives.
+  s.add_dependency "rubyzip", "1.2.3"
 
-    # HTTP proxy server
-    s.add_dependency 'http_parser.rb',      '0.6.0'
+  # HTTP proxy server
+  s.add_dependency "http_parser.rb", "0.6.0"
 
-    # HTML report
-    s.add_dependency 'coderay',             '1.1.0'
+  # HTML report
+  s.add_dependency "coderay", "1.1.2"
 
-    s.add_dependency 'childprocess',        '0.5.3'
+  s.add_dependency "childprocess", "1.0.1"
 
-    # RPC serialization.
-    s.add_dependency 'msgpack',             '0.7.0'
+  # RPC serialization.
+  s.add_dependency "msgpack", "1.2.10"
 
-    if RUBY_PLATFORM != 'java'
-        # Optimized JSON.
-        s.add_dependency 'oj',              '2.15.0'
-        s.add_dependency 'oj_mimic_json',   '1.0.1'
-    end
+  if RUBY_PLATFORM != "java"
+    # Optimized JSON.
+    s.add_dependency "oj", "3.7.12"
+    s.add_dependency "oj_mimic_json", "1.0.1"
+  end
 
-    # Web server
-    s.add_dependency 'puma',                '2.14.0'
+  # Web server
+  s.add_dependency "puma", "3.12.1"
 
-    # REST API
-    s.add_dependency 'sinatra',             '1.4.6'
-    s.add_dependency 'sinatra-contrib',     '1.4.6'
+  # REST API
+  s.add_dependency "sinatra", "2.0.5"
+  s.add_dependency "sinatra-contrib", "2.0.5"
 
-    # RPC client/server implementation.
-    s.add_dependency 'arachni-rpc',         '~> 0.2.1.4'
+  # RPC client/server implementation.
+  s.add_dependency "arachni-rpc", "~> 0.2.1.4"
 
-    # HTTP client.
-    s.add_dependency 'typhoeus',            '1.0.2'
+  # HTTP client.
+  s.add_dependency "typhoeus", "1.3.1"
 
-    # Fallback URI parsing and encoding utilities.
-    s.add_dependency 'addressable',         '2.3.6'
+  # Fallback URI parsing and encoding utilities.
+  s.add_dependency "addressable", "2.6.0"
 
-    # E-mail plugin.
-    s.add_dependency 'pony',                '1.11'
+  # E-mail plugin.
+  s.add_dependency "pony", "1.13.1"
 
-    # For the Arachni console (arachni_console).
-    s.add_dependency 'rb-readline',         '0.5.1'
+  # For the Arachni console (arachni_console).
+  s.add_dependency "rb-readline", "0.5.5"
 
-    # Markup parsing, for reports and Element::XML.
-    s.add_dependency 'nokogiri',            '1.6.8.1'
-    # Really fast and lightweight markup parsing, for pages.
-    s.add_dependency 'ox',                  '2.4.11'
+  # Markup parsing, for reports and Element::XML.
+  s.add_dependency "nokogiri", "1.10.3"
+  # Really fast and lightweight markup parsing, for pages.
+  s.add_dependency "ox", "2.10.0"
 
-    # Outputting data in table format (arachni_rpcd_monitor).
-    s.add_dependency 'terminal-table',      '1.4.5'
+  # Outputting data in table format (arachni_rpcd_monitor).
+  s.add_dependency "terminal-table", "1.8.0"
 
-    # Browser support for DOM/JS/AJAX analysis stuff.
-    # Lock webdriver, newer versions has issues.
-    s.add_dependency 'selenium-webdriver',  '3.0.1'
-    s.add_dependency 'watir-webdriver',     '0.8.0'
+  # Browser support for DOM/JS/AJAX analysis stuff.
+  # Lock webdriver, newer versions has issues.
+  s.add_dependency "selenium-webdriver", "3.142.3"
+  s.add_dependency "watir-webdriver", "0.9.9"
 
-    # Markdown to HTML conversion, used by the HTML report for component
-    # descriptions.
-    s.add_dependency 'kramdown',            '1.4.1'
+  # Markdown to HTML conversion, used by the HTML report for component
+  # descriptions.
+  s.add_dependency "kramdown", "2.1.0"
 
-    # Used to scrub Markdown for XSS etc.
-    s.add_dependency 'loofah',              '2.0.3'
+  # Used to scrub Markdown for XSS etc.
+  s.add_dependency "loofah", "2.2.3"
 
-    s.post_install_message = <<MSG
+  s.post_install_message = <<MSG
 
 Thank you for installing Arachni, here are some resources which should
 help you make the best of it:
@@ -136,7 +136,7 @@ or report a bug (via GitHub Issues) if you come across any problem.
 
 MSG
 
-    s.description = <<DESCRIPTION
+  s.description = <<DESCRIPTION
 Arachni is a feature-full, modular, high-performance Ruby framework aimed towards
 helping penetration testers and administrators evaluate the security of web applications.
 
@@ -159,5 +159,4 @@ a simple command line scanner utility, to a global high performance grid of
 scanners, to a Ruby library allowing for scripted audits, to a multi-user
 multi-scan web collaboration platform.
 DESCRIPTION
-
 end
