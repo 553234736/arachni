@@ -104,14 +104,14 @@ describe Arachni::Browser do
     describe '.has_executable?' do
         context 'when there is no executable browser' do
             it 'returns false' do
-                allow(Selenium::WebDriver::PhantomJS).to receive(:path){ false }
+                allow(Selenium::WebDriver::Chrome).to receive(:path){ false }
                 expect(described_class.has_executable?).to be_falsey
             end
         end
 
         context 'when there is an executable browser' do
             it 'returns true' do
-                allow(Selenium::WebDriver::PhantomJS).to receive(:path){ __FILE__ }
+                allow(Selenium::WebDriver::Chrome).to receive(:path){ __FILE__ }
                 expect(described_class.has_executable?).to be_truthy
             end
         end
@@ -120,7 +120,7 @@ describe Arachni::Browser do
     describe '.executable' do
         it 'returns the path to the browser executable' do
             stub = __FILE__
-            allow(Selenium::WebDriver::PhantomJS).to receive(:path){ stub }
+            allow(Selenium::WebDriver::Chrome).to receive(:path){ stub }
             expect(described_class.executable).to eq(stub)
         end
     end

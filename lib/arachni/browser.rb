@@ -143,9 +143,9 @@ class Browser
         end
 
         # @return   [String]
-        #   Path to the PhantomJS executable.
+        #   Path to the chrome executable.
         def executable
-            Selenium::WebDriver::PhantomJS.path
+            Selenium::WebDriver::Chrome.path
         end
 
         def asset_domains
