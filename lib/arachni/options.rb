@@ -6,28 +6,33 @@
     web site for more information on licensing and terms of use.
 =end
 
-require 'yaml'
-require 'singleton'
+require "yaml"
+require "singleton"
 
-require_relative 'error'
-require_relative 'utilities'
+require_relative "error"
+require_relative "utilities"
 
 module Arachni
 
-# Provides access to all of {Arachni}'s runtime options.
-#
-# To make management of options for different subsystems easier, some options
-# are {OptionGroups grouped together}.
-#
-# {OptionGroups Option groups} are initialized and added as attribute readers
-# to this class dynamically. Their attribute readers are named after the group's
-# filename and can be accessed, like so:
-#
-#     Arachni::Options.scope.page_limit = 10
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-# @see OptionGroups
-class Options
+  # Provides access to all of {Arachni}'s runtime options.
+  #
+  # To make management of options for different subsystems easier, some options
+  # are {OptionGroups grouped together}.
+  #
+  # {OptionGroups Option groups} are initialized and added as attribute readers
+  # to this class dynamically. Their attribute readers are named after the group's
+  # filename and can be accessed, like so:
+  #
+  #     Arachni::Options.scope.page_limit = 10
+  #   提供对所有{Arachni}的运行时选项的访问。
+  #   为了更轻松地管理不同子系统的选项，一些选项是{OptionGroups组合在一起}。
+  #   初始化＃{OptionGroups选项组}并将其作为属性读取器动态添加到此类。它们的属性读取器以组的文件名命名，可以访问，如下所示：
+  #              Arachni::Options.scope.page_limit = 10
+  #
+  # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+  # @see OptionGroups
+  class Options
+    # 单例
     include Singleton
 
     # {Options} error namespace.
@@ -37,67 +42,68 @@ class Options
     # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
     class Error < Arachni::Error
 
-        # Raised when a provided {Options#url= URL} is invalid.
-        #
-        # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-        class InvalidURL < Error
-        end
+      # Raised when a provided {Options#url= URL} is invalid.
+      # url 无效
+      #
+      # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+      class InvalidURL < Error
+      end
 
-        # Raised when a provided 'localhost' or '127.0.0.1' {Options#url= URL}.
-        #
-        # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-        class ReservedHostname < Error
-        end
+      # Raised when a provided 'localhost' or '127.0.0.1' {Options#url= URL}.
+      # 提供localhost或127.0.0.1
+      #
+      # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+      class ReservedHostname < Error
+      end
     end
 
-    class <<self
-
-        def method_missing( sym, *args, &block )
-            if instance.respond_to?( sym )
-                instance.send( sym, *args, &block )
-            else
-                super( sym, *args, &block )
-            end
+    class << self
+      def method_missing(sym, *args, &block)
+        if instance.respond_to?(sym)
+          instance.send(sym, *args, &block)
+        else
+          super(sym, *args, &block)
         end
+      end
 
-        def respond_to?( *args )
-            super || instance.respond_to?( *args )
-        end
+      def respond_to?(*args)
+        super || instance.respond_to?(*args)
+      end
 
-        # Ruby 2.0 doesn't like my class-level method_missing for some reason.
-        # @private
-        public :allocate
+      # Ruby 2.0 doesn't like my class-level method_missing for some reason.
+      # @private
+      public :allocate
 
-        # @return   [Hash<Symbol,OptionGroup>]
-        #   {OptionGroups Option group} classes by name.
-        def group_classes
-            @group_classes ||= {}
-        end
+      # @return   [Hash<Symbol,OptionGroup>]
+      #   {OptionGroups Option group} classes by name.
+      def group_classes
+        @group_classes ||= {}
+      end
 
-        # Should be called by {OptionGroup.inherited}.
-        # @private
-        def register_group( group )
-            name = Utilities.caller_name
+      # Should be called by {OptionGroup.inherited}.
+      # @private
+      def register_group(group)
+        name = Utilities.caller_name
 
-            # Prepare an attribute reader for this group...
-            attr_reader name
+        # Prepare an attribute reader for this group...
+        attr_reader name
 
-            # ... and initialize it.
-            instance_variable_set "@#{name}".to_sym, group.new
+        # ... and initialize it.
+        instance_variable_set "@#{name}".to_sym, group.new
 
-            group_classes[name.to_sym] = group
-        end
+        group_classes[name.to_sym] = group
+      end
     end
 
     # Load all {OptionGroups}.
-    require_relative 'option_groups'
+    require_relative "option_groups"
 
     # @return    [String]
     #   The URL to audit.
-    attr_reader   :url
+    attr_reader :url
 
     # @return    [Arachni::URI]
-    attr_reader   :parsed_url
+    attr_reader :parsed_url
 
     # @return    [Array<String, Symbol>]
     #   Checks to load, by name.
@@ -148,56 +154,57 @@ class Options
     attr_accessor :spawns
 
     def initialize
-        reset
+      reset
     end
 
     # Restores everything to their default values.
     #
     # @return [Options] `self`
     def reset
-        # nil everything out.
-        instance_variables.each { |var| instance_variable_set( var.to_s, nil ) }
+      # nil everything out.
+      instance_variables.each { |var| instance_variable_set(var.to_s, nil) }
 
-        # Set fresh option groups.
-        group_classes.each do |name, klass|
-            instance_variable_set "@#{name}".to_sym, klass.new
-        end
+      # Set fresh option groups.
+      group_classes.each do |name, klass|
+        instance_variable_set "@#{name}".to_sym, klass.new
+      end
 
-        @checks    = []
-        @platforms = []
-        @plugins   = {}
-        @spawns    = 0
+      @checks = []
+      @platforms = []
+      @plugins = {}
+      @spawns = 0
 
-        @no_fingerprinting = false
-        @authorized_by     = nil
+      @no_fingerprinting = false
+      @authorized_by = nil
 
-        self
+      self
     end
 
     # @param    [Integer]   spawns
     #
     # @see #spawns
-    def spawns=( spawns )
-        @spawns = spawns.to_i
+    def spawns=(spawns)
+      @spawns = spawns.to_i
     end
 
     # Disables platform fingerprinting.
     def do_not_fingerprint
-        self.no_fingerprinting = true
+      self.no_fingerprinting = true
     end
 
     # Enables platform fingerprinting.
     def fingerprint
-        self.no_fingerprinting = false
+      self.no_fingerprinting = false
     end
 
     # @return   [Bool]
     #   `true` if platform fingerprinting is enabled, `false` otherwise.
     def fingerprint?
-        !@no_fingerprinting
+      !@no_fingerprinting
     end
 
     # Normalizes and sets `url` as the target URL.
+    # 规范化并将“url”设置为目标URL。
     #
     # @param    [String]    url
     #   Absolute URL of the targeted web app.
@@ -207,42 +214,33 @@ class Options
     #
     # @raise    [Error::InvalidURL]
     #   If the given `url` is not valid.
-    def url=( url )
-        return @url = nil if !url
+    def url=(url)
+      return @url = nil if !url
 
-        parsed = Arachni::URI( url.to_s )
+      parsed = Arachni::URI(url.to_s)
 
-        if parsed.to_s.empty? || !parsed.absolute?
-
-            fail Error::InvalidURL,
-                 'Invalid URL argument, please provide a full absolute URL and try again.'
+      if parsed.to_s.empty? || !parsed.absolute?
+        fail Error::InvalidURL,
+             "Invalid URL argument, please provide a full absolute URL and try again."
 
         # PhantomJS won't proxy localhost.
-        elsif parsed.host == 'localhost' || parsed.host.start_with?( '127.' )
-
-            fail Error::ReservedHostname,
-                 "Loopback interfaces (like #{parsed.host}) are not supported," <<
-                     ' please use a different IP address or hostname.'
-
-        else
-
-            if scope.https_only? && parsed.scheme != 'https'
-
-                fail Error::InvalidURL,
-                     "Invalid URL argument, the 'https-only' option requires"+
-                         ' an HTTPS URL.'
-
-            elsif !%w(http https).include?( parsed.scheme )
-
-                fail Error::InvalidURL,
-                     'Invalid URL scheme, please provide an HTTP or HTTPS URL and try again.'
-
-            end
-
+      elsif parsed.host == "localhost" || parsed.host.start_with?("127.")
+        fail Error::ReservedHostname,
+             "Loopback interfaces (like #{parsed.host}) are not supported," <<
+               " please use a different IP address or hostname."
+      else
+        if scope.https_only? && parsed.scheme != "https"
+          fail Error::InvalidURL,
+               "Invalid URL argument, the 'https-only' option requires" +
+                 " an HTTPS URL."
+        elsif !%w(http https).include?(parsed.scheme)
+          fail Error::InvalidURL,
+               "Invalid URL scheme, please provide an HTTP or HTTPS URL and try again."
         end
+      end
 
-        @parsed_url = parsed
-        @url        = parsed.to_s
+      @parsed_url = parsed
+      @url = parsed.to_s
     end
 
     # Configures options via a Hash object.
@@ -284,42 +282,43 @@ class Options
     # @return   [Options]
     #
     # @see OptionGroups
-    def update( options )
-        options.each do |k, v|
-            k = k.to_sym
-            if group_classes.include? k
-                send( k ).update v
-            else
-                send( "#{k.to_s}=", v )
-            end
+    def update(options)
+      options.each do |k, v|
+        k = k.to_sym
+        if group_classes.include? k
+          send(k).update v
+        else
+          send("#{k.to_s}=", v)
         end
+      end
 
-        self
+      self
     end
+
     alias :set :update
 
     # @return   [Hash]
     #   Hash of errors with the name of the invalid options/groups as the keys.
     def validate
-        errors = {}
-        group_classes.keys.each do |name|
-            next if (group_errors = send(name).validate).empty?
-            errors[name] = group_errors
-        end
-        errors
+      errors = {}
+      group_classes.keys.each do |name|
+        next if (group_errors = send(name).validate).empty?
+        errors[name] = group_errors
+      end
+      errors
     end
 
     # @param    [String]    file
     #   Saves `self` to `file` using YAML.
-    def save( file )
-        File.open( file, 'w' ) do |f|
-            f.write to_save_data
-            f.path
-        end
+    def save(file)
+      File.open(file, "w") do |f|
+        f.write to_save_data
+        f.path
+      end
     end
 
     def to_save_data
-        to_rpc_data.to_yaml
+      to_rpc_data.to_yaml
     end
 
     # Loads a file created by {#save}.
@@ -328,50 +327,51 @@ class Options
     #   Path to the file created by {#save}.
     #
     # @return   [Arachni::Options]
-    def load( filepath )
-        update( YAML.load_file( filepath ) )
+    def load(filepath)
+      update(YAML.load_file(filepath))
     end
 
     # @return    [Hash]
     #   `self` converted to a Hash suitable for RPC transmission.
     def to_rpc_data
-        ignore = Set.new([:instance, :rpc, :dispatcher, :paths, :spawns,
-                          :snapshot, :output])
+      ignore = Set.new([:instance, :rpc, :dispatcher, :paths, :spawns,
+                        :snapshot, :output])
 
-        hash = {}
-        instance_variables.each do |var|
-            val = instance_variable_get( var )
-            var = normalize_name( var )
+      hash = {}
+      instance_variables.each do |var|
+        val = instance_variable_get(var)
+        var = normalize_name(var)
 
-            next if ignore.include?( var )
+        next if ignore.include?(var)
 
-            hash[var.to_s] = (val.is_a? OptionGroup) ? val.to_rpc_data : val
-        end
-        hash = hash.deep_clone
+        hash[var.to_s] = (val.is_a? OptionGroup) ? val.to_rpc_data : val
+      end
+      hash = hash.deep_clone
 
-        hash.delete( 'url' ) if !hash['url']
-        hash.delete( 'parsed_url' )
+      hash.delete("url") if !hash["url"]
+      hash.delete("parsed_url")
 
-        hash
+      hash
     end
 
     # @return    [Hash]
     #   `self` converted to a Hash.
     def to_hash
-        hash = {}
-        instance_variables.each do |var|
-            val = instance_variable_get( var )
-            next if (var = normalize_name( var )) == :instance
+      hash = {}
+      instance_variables.each do |var|
+        val = instance_variable_get(var)
+        next if (var = normalize_name(var)) == :instance
 
-            hash[var] = (val.is_a? OptionGroup) ? val.to_h : val
-        end
+        hash[var] = (val.is_a? OptionGroup) ? val.to_h : val
+      end
 
-        hash.delete( :url ) if !hash[:url]
-        hash.delete( :parsed_url )
-        hash.delete(:paths)
+      hash.delete(:url) if !hash[:url]
+      hash.delete(:parsed_url)
+      hash.delete(:paths)
 
-        hash.deep_clone
+      hash.deep_clone
     end
+
     alias :to_h :to_hash
 
     # @param    [Hash]  hash
@@ -379,8 +379,8 @@ class Options
     #
     # @return   [Hash]
     #   `hash` in {#to_hash} format.
-    def rpc_data_to_hash( hash )
-        self.class.allocate.reset.update( hash ).to_hash
+    def rpc_data_to_hash(hash)
+      self.class.allocate.reset.update(hash).to_hash
     end
 
     # @param    [Hash]  hash
@@ -388,23 +388,22 @@ class Options
     #
     # @return   [Hash]
     #   `hash` in {#to_rpc_data} format.
-    def hash_to_rpc_data( hash )
-        self.class.allocate.reset.update( hash ).to_rpc_data
+    def hash_to_rpc_data(hash)
+      self.class.allocate.reset.update(hash).to_rpc_data
     end
 
-    def hash_to_save_data( hash )
-        self.class.allocate.reset.update( hash ).to_save_data
+    def hash_to_save_data(hash)
+      self.class.allocate.reset.update(hash).to_save_data
     end
 
     private
 
     def group_classes
-        self.class.group_classes
+      self.class.group_classes
     end
 
-    def normalize_name( name )
-        name.to_s.gsub( '@', '' ).to_sym
+    def normalize_name(name)
+      name.to_s.gsub("@", "").to_sym
     end
-
-end
+  end
 end

@@ -7,37 +7,34 @@
 =end
 
 module Arachni
-module Platform::Fingerprinters
+  module Platform::Fingerprinters
 
-# Identifies ASP.NET MVC resources.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-# @version 0.1
-class ASPXMVC < Platform::Fingerprinter
+    # Identifies ASP.NET MVC resources.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    # @version 0.1
+    class ASPXMVC < Platform::Fingerprinter
+      ANTI_CSRF_NONCE = "__requestverificationtoken"
+      HEADER_FIELDS = %w(x-aspnetmvc-version)
 
-    ANTI_CSRF_NONCE = '__requestverificationtoken'
-    HEADER_FIELDS   = %w(x-aspnetmvc-version)
-
-    def run
+      def run
         # Naive but enough, I think.
         if html? && page.body =~ /input.*#{ANTI_CSRF_NONCE}/i
-            return update_platforms
+          return update_platforms
         end
 
         if (headers.keys & HEADER_FIELDS).any?
-            return update_platforms
+          return update_platforms
         end
 
-        if cookies.include?( ANTI_CSRF_NONCE )
-            update_platforms
+        if cookies.include?(ANTI_CSRF_NONCE)
+          update_platforms
         end
-    end
+      end
 
-    def update_platforms
+      def update_platforms
         platforms << :asp << :aspx << :windows << :aspx_mvc
+      end
     end
-
-end
-
-end
+  end
 end

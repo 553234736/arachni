@@ -7,25 +7,22 @@
 =end
 
 module Arachni
-module Platform::Fingerprinters
+  module Platform::Fingerprinters
 
-# Identifies Ruby resources.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-#
-# @version 0.1
-class Ruby < Platform::Fingerprinter
+    # Identifies Ruby resources.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    #
+    # @version 0.1
+    class Ruby < Platform::Fingerprinter
+      IDs = %w(mod_rack phusion passenger)
 
-    IDs = %w(mod_rack phusion passenger)
-
-    def run
+      def run
         IDs.each do |id|
-            next if !powered_by.include? id
-            return platforms << :ruby << :rack
+          next if !powered_by.include? id
+          return platforms << :ruby << :rack
         end
+      end
     end
-
-end
-
-end
+  end
 end

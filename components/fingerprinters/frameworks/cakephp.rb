@@ -7,22 +7,19 @@
 =end
 
 module Arachni
-module Platform::Fingerprinters
+  module Platform::Fingerprinters
 
-# Identifies CakePHP resources.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-#
-# @version 0.1
-class CakePHP < Platform::Fingerprinter
-
-    def run
-        if cookies.include?( 'cakephp' )
-            platforms << :php << :cakephp
+    # Identifies CakePHP resources.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    #
+    # @version 0.1
+    class CakePHP < Platform::Fingerprinter
+      def run
+        if cookies.include?("cakephp")
+          platforms << :php << :cakephp
         end
+      end
     end
-
-end
-
-end
+  end
 end

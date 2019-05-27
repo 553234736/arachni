@@ -7,49 +7,48 @@
 =end
 
 module Arachni
-class Framework
-module Parts
+  class Framework
+    module Parts
 
-# Provides a {Arachni::Plugin::Manager} and related helpers.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-module Plugin
+      # Provides a {Arachni::Plugin::Manager} and related helpers.
+      #
+      # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+      module Plugin
 
-    # @return   [Arachni::Plugin::Manager]
-    attr_reader :plugins
+        # @return   [Arachni::Plugin::Manager]
+        attr_reader :plugins
 
-    def initialize
-        super
-        @plugins = Arachni::Plugin::Manager.new( self )
-    end
+        def initialize
+          super
+          # 初始化插件管理器
+          @plugins = Arachni::Plugin::Manager.new(self)
+        end
 
-    # @return    [Array<Hash>]
-    #   Information about all available {Plugins}.
-    def list_plugins( patterns = nil )
-        loaded = @plugins.loaded
+        # @return    [Array<Hash>]
+        #   Information about all available {Plugins}.
+        def list_plugins(patterns = nil)
+          loaded = @plugins.loaded
 
-        begin
+          begin
             @plugins.clear
             @plugins.available.map do |plugin|
-                path = @plugins.name_to_path( plugin )
-                next if patterns && !@plugins.matches_globs?( path, patterns )
+              path = @plugins.name_to_path(plugin)
+              next if patterns && !@plugins.matches_globs?(path, patterns)
 
-                @plugins[plugin].info.merge(
-                    options:   @plugins[plugin].info[:options] || [],
-                    shortname: plugin,
-                    path:      path,
-                    author:    [@plugins[plugin].info[:author]].
-                                   flatten.map { |a| a.strip }
-                )
+              @plugins[plugin].info.merge(
+                options: @plugins[plugin].info[:options] || [],
+                shortname: plugin,
+                path: path,
+                author: [@plugins[plugin].info[:author]].
+                  flatten.map { |a| a.strip },
+              )
             end.compact
-        ensure
+          ensure
             @plugins.clear
             @plugins.load loaded
+          end
         end
+      end
     end
-
-end
-
-end
-end
+  end
 end

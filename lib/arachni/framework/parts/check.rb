@@ -7,87 +7,89 @@
 =end
 
 module Arachni
-class Framework
-module Parts
+  class Framework
+    module Parts
 
-# Provides a {Arachni::Check::Manager} and related helpers.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-module Check
+      # Provides a {Arachni::Check::Manager} and related helpers.
+      #
+      # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+      module Check
 
-    # @return   [Arachni::Check::Manager]
-    attr_reader :checks
+        # @return   [Arachni::Check::Manager]
+        attr_reader :checks
 
-    def initialize
-        super
-        @checks = Arachni::Check::Manager.new( self )
-    end
+        def initialize
+          super
+          @checks = Arachni::Check::Manager.new(self)
+        end
 
-    # @return    [Array<Hash>]
-    #   Information about all available {Checks}.
-    def list_checks( patterns = nil )
-        loaded = @checks.loaded
+        # @return    [Array<Hash>]
+        #   Information about all available {Checks}.
+        #   有关所有可用{Checks}的信息。
+        def list_checks(patterns = nil)
+          loaded = @checks.loaded
 
-        begin
+          begin
             @checks.clear
             @checks.available.map do |name|
-                path = @checks.name_to_path( name )
-                next if patterns && !@checks.matches_globs?( path, patterns )
+              path = @checks.name_to_path(name)
+              next if patterns && !@checks.matches_globs?(path, patterns)
 
-                @checks[name].info.merge(
-                    shortname: name,
-                    author:    [@checks[name].info[:author]].
-                                   flatten.map { |a| a.strip },
-                    path:      path.strip,
-                    platforms: @checks[name].platforms,
-                    elements:  @checks[name].elements
-                )
+              @checks[name].info.merge(
+                shortname: name,
+                author: [@checks[name].info[:author]].
+                  flatten.map { |a| a.strip },
+                path: path.strip,
+                platforms: @checks[name].platforms,
+                elements: @checks[name].elements,
+              )
             end.compact
-        ensure
+          ensure
             @checks.clear
             @checks.load loaded
+          end
         end
-    end
 
-    private
+        private
 
-    def run_checks( checks, page )
-        ran = false
-        checks.values.each do |check|
-            ran = true if check_page( check, page )
+        # 执行检查操作
+        def run_checks(checks, page)
+          ran = false
+          checks.values.each do |check|
+            ran = true if check_page(check, page)
+          end
+          harvest_http_responses if ran
+          ran
         end
-        harvest_http_responses if ran
-        ran
-    end
 
-    # Passes a page to the check and runs it.
-    # It also handles any exceptions thrown by the check at runtime.
-    #
-    # @param    [Check::Base]   check
-    #   Check to run.
-    # @param    [Page]    page
-    def check_page( check, page )
-        ps = page.platforms.to_a
+        # Passes a page to the check and runs it.
+        # It also handles any exceptions thrown by the check at runtime.
+        # 将页面传递给{检查}并运行它。
+        # 它还处理运行时检查抛出的任何异常。
+        # @param    [Check::Base]   check
+        #   Check to run.
+        # @param    [Page]    page
+        def check_page(check, page)
+          ps = page.platforms.to_a
 
-        # If we've been given platforms which the check doesn't support don't
-        # even bother running it.
-        if !check.supports_platforms?( ps )
-            print_info "Check #{check.shortname} does not support: #{ps.join( ' + ' )}"
+          # If we've been given platforms which the check doesn't support don't
+          # even bother running it.
+          # 如果指定了平台，{check}不支持的就不再运行
+          if !check.supports_platforms?(ps)
+            print_info "Check #{check.shortname} does not support: #{ps.join(" + ")}"
             return false
-        end
+          end
 
-        begin
-            @checks.run_one( check, page )
-        rescue => e
+          begin
+            @checks.run_one(check, page)
+          rescue => e
             print_error "Error in #{check.to_s}: #{e.to_s}"
             print_error "Page: #{page.dom.url}"
             print_error_backtrace e
             false
+          end
         end
+      end
     end
-
-end
-
-end
-end
+  end
 end

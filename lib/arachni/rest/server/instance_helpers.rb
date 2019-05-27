@@ -7,31 +7,27 @@
 =end
 
 module Arachni
-module Rest
-class Server
+  module Rest
+    class Server
+      module InstanceHelpers
+        @@instances = {}
 
-module InstanceHelpers
+        def instances
+          @@instances
+        end
 
-    @@instances = {}
+        def scan_for(id)
+          @@instances[id].service
+        end
 
-    def instances
-        @@instances
+        def exists?(id)
+          instances.include? id
+        end
+
+        def kill_instance(id)
+          Processes::Instances.kill(instances[id].url)
+        end
+      end
     end
-
-    def scan_for( id )
-        @@instances[id].service
-    end
-
-    def exists?( id )
-        instances.include? id
-    end
-
-    def kill_instance( id )
-        Processes::Instances.kill( instances[id].url )
-    end
-
-end
-
-end
-end
+  end
 end

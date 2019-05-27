@@ -7,29 +7,26 @@
 =end
 
 module Arachni
-module Platform::Fingerprinters
+  module Platform::Fingerprinters
 
-# Identifies Tomcat web servers.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-# @version 0.1
-class Tomcat < Platform::Fingerprinter
+    # Identifies Tomcat web servers.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    # @version 0.1
+    class Tomcat < Platform::Fingerprinter
+      IDS = %w(coyote tomcat)
 
-    IDS = %w(coyote tomcat)
-
-    def run
+      def run
         IDS.each do |id|
-            next if !server_or_powered_by_include? id
+          next if !server_or_powered_by_include? id
 
-            return update_platforms
+          return update_platforms
         end
-    end
+      end
 
-    def update_platforms
+      def update_platforms
         platforms << :java << :tomcat
+      end
     end
-
-end
-
-end
+  end
 end

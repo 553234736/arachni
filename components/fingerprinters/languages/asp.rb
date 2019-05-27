@@ -7,28 +7,25 @@
 =end
 
 module Arachni
-module Platform::Fingerprinters
+  module Platform::Fingerprinters
 
-#
-# Identifies ASP resources.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-#
-# @version 0.1
-#
-class ASP < Platform::Fingerprinter
+    #
+    # Identifies ASP resources.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    #
+    # @version 0.1
+    #
+    class ASP < Platform::Fingerprinter
+      EXTENSION = "asp"
+      SESSIONID = "aspsessionid"
 
-    EXTENSION = 'asp'
-    SESSIONID = 'aspsessionid'
-
-    def run
-        return if extension != EXTENSION && !parameters.include?( SESSIONID ) &&
-            !cookies.include?( SESSIONID ) && !server_or_powered_by_include?( 'asp' )
+      def run
+        return if extension != EXTENSION && !parameters.include?(SESSIONID) &&
+                  !cookies.include?(SESSIONID) && !server_or_powered_by_include?("asp")
 
         platforms << :asp << :windows
+      end
     end
-
-end
-
-end
+  end
 end

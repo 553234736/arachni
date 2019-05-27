@@ -27,11 +27,14 @@ module Arachni
       # Initializes the command line interface and the {Framework}.
       def initialize
         # Instantiate the big-boy!
+        # 初始化
         @framework = Arachni::Framework.new
 
+        # 解析各个参数
         parse_options
 
         # Reset the framework's HTTP interface so that options will take effect.
+        # 重置http接口，使得参数可以生效
         @framework.http.reset
 
         @framework.reset_trainer

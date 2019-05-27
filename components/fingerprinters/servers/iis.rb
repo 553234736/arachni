@@ -7,22 +7,19 @@
 =end
 
 module Arachni
-module Platform::Fingerprinters
+  module Platform::Fingerprinters
 
-#
-# Identifies IIS web servers.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-#
-# @version 0.1
-#
-class IIS < Platform::Fingerprinter
-
-    def run
-        platforms << :windows << :iis if server_or_powered_by_include? 'iis'
+    #
+    # Identifies IIS web servers.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    #
+    # @version 0.1
+    #
+    class IIS < Platform::Fingerprinter
+      def run
+        platforms << :windows << :iis if server_or_powered_by_include? "iis"
+      end
     end
-
-end
-
-end
+  end
 end

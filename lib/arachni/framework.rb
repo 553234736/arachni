@@ -1,58 +1,56 @@
-# encoding: utf-8
+# frozen_string_literal: true
 
-=begin
-    Copyright 2010-2017 Sarosys LLC <http://www.sarosys.com>
+#     Copyright 2010-2017 Sarosys LLC <http://www.sarosys.com>
+#
+#     This file is part of the Arachni Framework project and is subject to
+#     redistribution and commercial restrictions. Please see the Arachni Framework
+#     web site for more information on licensing and terms of use.
 
-    This file is part of the Arachni Framework project and is subject to
-    redistribution and commercial restrictions. Please see the Arachni Framework
-    web site for more information on licensing and terms of use.
-=end
+require "rubygems"
+require "monitor"
+require "bundler/setup"
 
-require 'rubygems'
-require 'monitor'
-require 'bundler/setup'
-
-require_relative 'options'
+require_relative "options"
 
 module Arachni
+  lib = Options.paths.lib
+  require lib + "version"
+  require lib + "support"
+  require lib + "ruby"
+  require lib + "error"
+  require lib + "scope"
+  require lib + "utilities"
+  require lib + "uri"
+  require lib + "component"
+  require lib + "platform"
+  require lib + "http"
+  require lib + "snapshot"
+  require lib + "parser"
+  require lib + "issue"
+  require lib + "check"
+  require lib + "plugin"
+  require lib + "report"
+  require lib + "reporter"
+  require lib + "session"
+  require lib + "trainer"
+  require lib + "browser_cluster"
 
-lib = Options.paths.lib
-require lib + 'version'
-require lib + 'support'
-require lib + 'ruby'
-require lib + 'error'
-require lib + 'scope'
-require lib + 'utilities'
-require lib + 'uri'
-require lib + 'component'
-require lib + 'platform'
-require lib + 'http'
-require lib + 'snapshot'
-require lib + 'parser'
-require lib + 'issue'
-require lib + 'check'
-require lib + 'plugin'
-require lib + 'report'
-require lib + 'reporter'
-require lib + 'session'
-require lib + 'trainer'
-require lib + 'browser_cluster'
+  Dir.glob("#{lib}framework/parts/**/*.rb").each { |h| require h }
 
-Dir.glob( "#{lib}framework/parts/**/*.rb" ).each { |h| require h }
-
-# The Framework class ties together all the subsystems.
-#
-# It's the brains of the operation, it bosses the rest of the subsystems around.
-# It loads checks, reports and plugins and runs them according to user options.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-class Framework
+  # The Framework class ties together all the subsystems.
+  #
+  # It's the brains of the operation, it bosses the rest of the subsystems around.
+  # It loads checks, reports and plugins and runs them according to user options.
+  #
+  # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+  class Framework
     include UI::Output
     include Utilities
 
     # How many times to request a page upon failure.
     AUDIT_PAGE_MAX_TRIES = 5
 
+    # 在浏览器打开的话就能看到这些是配置页面可能出现的功能模块
     include Parts::Scope
     include Parts::Browser
     include Parts::Report
@@ -81,48 +79,49 @@ class Framework
     # @param    [Options]    options
     # @param    [Block]      block
     #   Block to be passed a {Framework} instance which will then be {#reset}.
-    def initialize( options = Options.instance, &block )
-        Encoding.default_external = 'BINARY'
-        Encoding.default_internal = 'BINARY'
+    def initialize(options = Options.instance, &block)
+      Encoding.default_external = "BINARY"
+      Encoding.default_internal = "BINARY"
 
-        @options = options
+      @options = options
 
-        # Initialize the Parts.
-        super()
+      # Initialize the Parts.
+      # 初始化其他部分
+      super()
 
-        # Little helper to run a piece of code and reset the framework to be
-        # ready to be reused.
-        if block_given?
-            begin
-                block.call self
-            ensure
-                clean_up
-                reset
-            end
+      # Little helper to run a piece of code and reset the framework to be
+      # ready to be reused.
+      if block_given?
+        begin
+          block.call self
+        ensure
+          clean_up
+          reset
         end
+      end
     end
 
     # Starts the scan.
     #
     # @param   [Block]  block
     #   A block to call after the audit has finished but before running {#reporters}.
-    def run( &block )
-        prepare
-        handle_signals
-        return if aborted?
+    def run(&block)
+      prepare
+      handle_signals
+      return if aborted?
 
-        # Catch exceptions so that if something breaks down or the user opted to
-        # exit the reporters will still run with whatever results Arachni managed
-        # to gather.
-        exception_jail( false ){ audit }
+      # Catch exceptions so that if something breaks down or the user opted to
+      # exit the reporters will still run with whatever results Arachni managed
+      # to gather.
+      exception_jail(false) { audit }
 
-        return if aborted? || suspended?
+      return if aborted? || suspended?
 
-        clean_up
-        exception_jail( false ){ block.call } if block_given?
-        state.status = :done
+      clean_up
+      exception_jail(false) { block.call } if block_given?
+      state.status = :done
 
-        true
+      true
     end
 
     # @return   [Hash]
@@ -138,40 +137,37 @@ class Framework
     #   *  `:status`        -- {#status}
     #   *  `:messages`      -- {#status_messages}
     def statistics
-        {
-            http:            http.statistics,
-            browser_cluster: BrowserCluster.statistics,
-            runtime:         @start_datetime ? Time.now - @start_datetime : 0,
-            found_pages:     sitemap.size,
-            audited_pages:   state.audited_page_count,
-            current_page:    @current_url
-        }
+      {
+        http: http.statistics,
+        browser_cluster: BrowserCluster.statistics,
+        runtime: @start_datetime ? Time.now - @start_datetime : 0,
+        found_pages: sitemap.size,
+        audited_pages: state.audited_page_count,
+        current_page: @current_url,
+      }
     end
 
     def inspect
-        stats = statistics
+      stats = statistics
 
-        s = "#<#{self.class} (#{status}) "
+      s = "#<#{self.class} (#{status}) "
 
-        s << "runtime=#{stats[:runtime]} "
-        s << "found-pages=#{stats[:found_pages]} "
-        s << "audited-pages=#{stats[:audited_pages]} "
-        s << "issues=#{Data.issues.size} "
+      s << "runtime=#{stats[:runtime]} "
+      s << "found-pages=#{stats[:found_pages]} "
+      s << "audited-pages=#{stats[:audited_pages]} "
+      s << "issues=#{Data.issues.size} "
 
-        if @current_url
-            s << "current_url=#{@current_url.inspect} "
-        end
+      s << "current_url=#{@current_url.inspect} " if @current_url
 
-        s << "checks=#{@checks.keys.join(',')} "
-        s << "plugins=#{@plugins.keys.join(',')}"
-        s << '>'
+      s << "checks=#{@checks.keys.join(",")} "
+      s << "plugins=#{@plugins.keys.join(",")}"
+      s << ">"
     end
 
     # @return    [String]
     #   Returns the version of the framework.
     def version
-        Arachni::VERSION
+      Arachni::VERSION
     end
-
-end
+  end
 end

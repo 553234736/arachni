@@ -6,105 +6,107 @@
     web site for more information on licensing and terms of use.
 =end
 
-require_relative 'list'
-require_relative 'fingerprinter'
+require_relative "list"
+require_relative "fingerprinter"
 
 module Arachni
-module Platform
+  module Platform
 
-# {Platform} error namespace.
-#
-# All {Platform} errors inherit from and live under it.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-class Error < Arachni::Error
-
-    # Raised on {Manager#invalid?} platform names.
+    # {Platform} error namespace.
+    #
+    # All {Platform} errors inherit from and live under it.
+    # 所有{Platform}错误都继承并存在于其下。
     #
     # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-    class Invalid < Error
+    class Error < Arachni::Error
+
+      # Raised on {Manager#invalid?} platform names.
+      #
+      # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+      class Invalid < Error
+      end
     end
-end
 
-# Represents a collection of platform {List lists}.
-#
-# It also holds a DB of all fingerprints per URI as a class variable and
-# provides helper method for accessing and manipulating it.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-class Manager
-    include Enumerable
-    include Utilities
-    extend  Utilities
-    include UI::Output
-    extend  UI::Output
+    # Represents a collection of platform {List lists}.
+    #
+    # It also holds a DB of all fingerprints per URI as a class variable and
+    # provides helper method for accessing and manipulating it.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    class Manager
+      include Enumerable
+      include Utilities
+      extend Utilities
+      include UI::Output
+      extend UI::Output
 
-    TYPES = {
-        os:         'Operating systems',
-        db:         'Databases',
-        servers:    'Web servers',
-        languages:  'Programming languages',
-        frameworks: 'Frameworks'
-    }
+      TYPES = {
+        os: "Operating systems",
+        db: "Databases",
+        servers: "Web servers",
+        languages: "Programming languages",
+        frameworks: "Frameworks",
+      }
 
-    OS = {
+      OS = {
         # Generic *nix, flavor couldn't be identified.
-        unix:    {
-            linux:   {},
+        unix: {
+          linux: {},
 
-            # Generic BSD, flavor couldn't be identified.
-            bsd:     {},
-            aix:     {},
-            solaris: {}
+          # Generic BSD, flavor couldn't be identified.
+          bsd: {},
+          aix: {},
+          solaris: {},
         },
-        windows: {}
-    }
+        windows: {},
+      }
 
-    DB = {
+      DB = {
         sql: {
-            mysql:      {},
-            pgsql:      {},
-            mssql:      {},
-            oracle:     {},
-            sqlite:     {},
-            ingres:     {},
-            emc:        {},
-            db2:        {},
-            interbase:  {},
-            informix:   {},
-            firebird:   {},
-            maxdb:      {},
-            sybase:     {},
-            frontbase:  {},
-            hsqldb:     {},
-            access:     {},
+          mysql: {},
+          pgsql: {},
+          mssql: {},
+          oracle: {},
+          sqlite: {},
+          ingres: {},
+          emc: {},
+          db2: {},
+          interbase: {},
+          informix: {},
+          firebird: {},
+          maxdb: {},
+          sybase: {},
+          frontbase: {},
+          hsqldb: {},
+          access: {},
         },
         nosql: {
-            mongodb:    {}
-        }
-    }
+          mongodb: {},
+        },
+      }
 
-    SERVERS = [
+      SERVERS = [
         :apache,
         :nginx,
         :tomcat,
         :iis,
         :jetty,
-        :gunicorn
-    ]
+        :gunicorn,
+      ]
 
-    LANGUAGES = [
+      LANGUAGES = [
         :php,
         :java,
         :python,
         :ruby,
         :asp,
         :aspx,
-        :perl
-    ]
+        :perl,
+      ]
 
-    # WebApp frameworks.
-    FRAMEWORKS = [
+      # WebApp frameworks.
+      # WebApp框架。
+      FRAMEWORKS = [
         :rack,
         :rails,
         :cakephp,
@@ -113,470 +115,470 @@ class Manager
         :django,
         :aspx_mvc,
         :jsf,
-        :cherrypy
-    ]
-
-    PLATFORM_NAMES = {
+        :cherrypy,
+      ]
+      # 平台名称
+      PLATFORM_NAMES = {
         # Operating systems
-        unix:       'Generic Unix family',
-        linux:      'Linux',
-        bsd:        'Generic BSD family',
-        aix:        'IBM AIX',
-        solaris:    'Solaris',
-        windows:    'MS Windows',
+        unix: "Generic Unix family",
+        linux: "Linux",
+        bsd: "Generic BSD family",
+        aix: "IBM AIX",
+        solaris: "Solaris",
+        windows: "MS Windows",
 
         # Databases
-        sql:        'Generic SQL family',
-        mysql:      'MySQL',
-        pgsql:      'Postgresql',
-        mssql:      'MSSQL',
-        oracle:     'Oracle',
-        sqlite:     'SQLite',
-        emc:        'EMC',
-        db2:        'DB2',
-        interbase:  'InterBase',
-        informix:   'Informix',
-        firebird:   'Firebird',
-        maxdb:      'SaP Max DB',
-        sybase:     'Sybase',
-        frontbase:  'Frontbase',
-        ingres:     'IngresDB',
-        hsqldb:     'HSQLDB',
-        access:     'MS Access',
-        nosql:      'Generic NoSQL family',
-        mongodb:    'MongoDB',
+        sql: "Generic SQL family",
+        mysql: "MySQL",
+        pgsql: "Postgresql",
+        mssql: "MSSQL",
+        oracle: "Oracle",
+        sqlite: "SQLite",
+        emc: "EMC",
+        db2: "DB2",
+        interbase: "InterBase",
+        informix: "Informix",
+        firebird: "Firebird",
+        maxdb: "SaP Max DB",
+        sybase: "Sybase",
+        frontbase: "Frontbase",
+        ingres: "IngresDB",
+        hsqldb: "HSQLDB",
+        access: "MS Access",
+        nosql: "Generic NoSQL family",
+        mongodb: "MongoDB",
 
         # Web servers
-        apache:     'Apache',
-        nginx:      'Nginx',
-        tomcat:     'TomCat',
-        iis:        'IIS',
-        jetty:      'Jetty',
-        gunicorn:   'Gunicorn',
+        apache: "Apache",
+        nginx: "Nginx",
+        tomcat: "TomCat",
+        iis: "IIS",
+        jetty: "Jetty",
+        gunicorn: "Gunicorn",
 
         # Programming languages
-        php:    'PHP',
-        java:   'Java',
-        python: 'Python',
-        ruby:   'Ruby',
-        asp:    'ASP',
-        aspx:   'ASP.NET',
-        perl:   'Perl',
+        php: "PHP",
+        java: "Java",
+        python: "Python",
+        ruby: "Ruby",
+        asp: "ASP",
+        aspx: "ASP.NET",
+        perl: "Perl",
 
         # Web frameworks
-        rack:     'Rack',
-        django:   'Django',
-        cakephp:  'CakePHP',
-        nette:    'Nette',
-        symfony:  'Symfony',
-        rails:    'Ruby on Rails',
-        aspx_mvc: 'ASP.NET MVC',
-        jsf:      'JavaServer Faces',
-        cherrypy: 'CherryPy'
-    }
+        rack: "Rack",
+        django: "Django",
+        cakephp: "CakePHP",
+        nette: "Nette",
+        symfony: "Symfony",
+        rails: "Ruby on Rails",
+        aspx_mvc: "ASP.NET MVC",
+        jsf: "JavaServer Faces",
+        cherrypy: "CherryPy",
+      }
 
-    PLATFORM_CACHE_SIZE = 500
+      PLATFORM_CACHE_SIZE = 500
 
-    def self.synchronize( &block )
-        @mutex.synchronize( &block )
-    end
+      def self.synchronize(&block)
+        @mutex.synchronize(&block)
+      end
 
-    def self.find_type( platform )
+      # 根据平台获取对应了类型
+      def self.find_type(platform)
         @find_type ||= {}
 
         if @find_type.empty?
-            TYPES.keys.each do |type|
+          TYPES.keys.each do |type|
+            platforms = const_get(type.to_s.upcase.to_sym)
+            platforms = platforms.find_symbol_keys_recursively if platforms.is_a?(Hash)
 
-                platforms = const_get( type.to_s.upcase.to_sym )
-                platforms = platforms.find_symbol_keys_recursively if platforms.is_a?( Hash )
-
-                platforms.each do |p|
-                    @find_type[p] = type
-                end
+            platforms.each do |p|
+              @find_type[p] = type
             end
+          end
         end
 
         @find_type[platform]
-    end
+      end
 
-    def self.valid
-        @valid ||= Set.new( PLATFORM_NAMES.keys )
-    end
+      def self.valid
+        @valid ||= Set.new(PLATFORM_NAMES.keys)
+      end
 
-    def self.valid?( platforms )
+      def self.valid?(platforms)
         platforms = [platforms].flatten.compact
         (valid & platforms).to_a == platforms
-    end
+      end
 
-    # Sets global platforms fingerprints
-    # @private
-    def self.set( platforms )
-        @platforms = Support::Cache::LeastRecentlyPushed.new( PLATFORM_CACHE_SIZE )
+      # Sets global platforms fingerprints
+      # @private
+      def self.set(platforms)
+        @platforms = Support::Cache::LeastRecentlyPushed.new(PLATFORM_CACHE_SIZE)
         platforms.each { |k, v| @platforms[k] = v }
         @platforms
-    end
+      end
 
-    # Clears global platforms DB.
-    def self.clear
+      # Clears global platforms DB.
+      def self.clear
         @platforms.clear
-    end
+      end
 
-    # Empties the global platform fingerprints.
-    def self.reset
+      # Empties the global platform fingerprints.
+      def self.reset
         set Hash.new
         @manager.clear if @manager
         @manager = nil
 
-        @mutex  = Monitor.new
+        @mutex = Monitor.new
 
         self
-    end
-    reset
+      end
+      reset
 
-    def self.fingerprinters
+      # 指纹信息
+      def self.fingerprinters
         @manager ||=
-            Component::Manager.new( Options.paths.fingerprinters,
-                                    Platform::Fingerprinters )
-    end
-    fingerprinters.load_all
+          Component::Manager.new(Options.paths.fingerprinters,
+                                 Platform::Fingerprinters)
+      end
+      fingerprinters.load_all
 
-    # @param    [HTTP::Response, Page]  resource
-    #
-    # @return   [Bool]
-    #   `true` if the resource should be fingerprinted, `false` otherwise.
-    def self.fingerprint?( resource )
+      # @param    [HTTP::Response, Page]  resource
+      #
+      # @return   [Bool]
+      #   `true` if the resource should be fingerprinted, `false` otherwise.
+      def self.fingerprint?(resource)
         !(!Options.fingerprint? || resource.code != 200 || !resource.text? ||
-            include?( resource.url ) || resource.scope.out?)
-    end
+          include?(resource.url) || resource.scope.out?)
+      end
 
-    # Runs all fingerprinters against the given `page`.
-    #
-    # @param    [Page]  page
-    #   Page to fingerprint.
-    #
-    # @return   [Manager]
-    #   Updated `self`.
-    def self.fingerprint( page )
+      # Runs all fingerprinters against the given `page`.
+      #
+      # @param    [Page]  page
+      #   Page to fingerprint.
+      #
+      # @return   [Manager]
+      #   Updated `self`.
+      def self.fingerprint(page)
         synchronize do
-            return page if !fingerprint? page
+          return page if !fingerprint? page
 
-            fingerprinters.available.each do |name|
-                exception_jail( false ) do
-                    fingerprinters[name].new( page ).run
-                end
+          fingerprinters.available.each do |name|
+            exception_jail(false) do
+              fingerprinters[name].new(page).run
             end
+          end
 
-            # We do this to flag the resource as checked even if no platforms
-            # were identified. We don't want to keep checking a resource that
-            # yields nothing over and over.
-            update( page.url, [] )
+          # We do this to flag the resource as checked even if no platforms
+          # were identified. We don't want to keep checking a resource that
+          # yields nothing over and over.
+          update(page.url, [])
         end
 
         # Fingerprinting will have resulted in element parsing, clear the element
         # caches to keep RAM consumption down.
         page.clear_cache
-    end
+      end
 
-    # @param    [String, URI]   uri
-    #
-    # @return   [Manager]
-    #   Platform for the given `uri`
-    def self.[]( uri )
+      # @param    [String, URI]   uri
+      #
+      # @return   [Manager]
+      #   Platform for the given `uri`
+      def self.[](uri)
         # If fingerprinting is disabled there's no point in filling the cache
         # with the same object over and over, create an identical one for all
         # URLs and return that always.
         if !Options.fingerprint?
-            return @default ||= new_from_options
+          return @default ||= new_from_options
         end
 
-        return new_from_options if !(key = make_key( uri ))
+        return new_from_options if !(key = make_key(uri))
         synchronize { @platforms.fetch(key) { new_from_options } }
-    end
+      end
 
-    # Sets platform manager for the given `uri`.
-    #
-    # @param    [String, URI]   uri
-    # @param    [Enumerable] platforms
-    #
-    # @return   [Manager]
-    #
-    # @raise    [Error::Invalid]
-    #   On {#invalid?} platforms.
-    def self.[]=( uri, platforms )
+      # Sets platform manager for the given `uri`.
+      #
+      # @param    [String, URI]   uri
+      # @param    [Enumerable] platforms
+      #
+      # @return   [Manager]
+      #
+      # @raise    [Error::Invalid]
+      #   On {#invalid?} platforms.
+      def self.[]=(uri, platforms)
         # For some reason we failed to make a key, try to salvage the situation.
-        if !(key = make_key( uri ))
-            return new_from_options( platforms )
+        if !(key = make_key(uri))
+          return new_from_options(platforms)
         end
 
         synchronize do
-            @platforms[key] =
-                platforms.is_a?( self ) ?
-                    platforms :
-                    new_from_options( platforms )
+          @platforms[key] =
+            platforms.is_a?(self) ?
+              platforms :
+              new_from_options(platforms)
         end
-    end
+      end
 
-    def self.size
+      def self.size
         @platforms.size
-    end
+      end
 
-    # @param    [String, URI]   uri
-    def self.include?( uri )
-        @platforms.include?( make_key( uri ) )
-    end
+      # @param    [String, URI]   uri
+      def self.include?(uri)
+        @platforms.include?(make_key(uri))
+      end
 
-    # Updates the `platforms` for the given `uri`.
-    #
-    # @param    [String, URI]   uri
-    # @param    [Manager] platforms
-    #
-    # @return   [Manager]
-    #   Updated manager.
-    #
-    # @raise    [Error::Invalid]
-    #   On {#invalid?} platforms.
-    def self.update( uri, platforms )
+      # Updates the `platforms` for the given `uri`.
+      #
+      # @param    [String, URI]   uri
+      # @param    [Manager] platforms
+      #
+      # @return   [Manager]
+      #   Updated manager.
+      #
+      # @raise    [Error::Invalid]
+      #   On {#invalid?} platforms.
+      def self.update(uri, platforms)
         synchronize do
-            self[uri].update platforms
+          self[uri].update platforms
         end
-    end
+      end
 
-    # @return   [Boolean]
-    #   `true` if there are no platforms fingerprints, `false` otherwise.
-    def self.empty?
+      # @return   [Boolean]
+      #   `true` if there are no platforms fingerprints, `false` otherwise.
+      def self.empty?
         @platforms.empty?
-    end
+      end
 
-    # @return   [Boolean]
-    #   `true` if there are platforms fingerprints, `false` otherwise.
-    def self.any?
+      # @return   [Boolean]
+      #   `true` if there are platforms fingerprints, `false` otherwise.
+      def self.any?
         !empty?
-    end
+      end
 
-    def self.make_key( uri )
-        return if !(parsed = Arachni::URI( uri ))
+      def self.make_key(uri)
+        return if !(parsed = Arachni::URI(uri))
         parsed.without_query
-    end
+      end
 
-    def self.new_from_options( platforms = [] )
-        new( platforms | Options.platforms )
-    end
+      def self.new_from_options(platforms = [])
+        new(platforms | Options.platforms)
+      end
 
-    # @param    [Array<String, Symbol>] platforms
-    #   Platforms with which to initialize the lists.
-    def initialize( platforms = [] )
+      # @param    [Array<String, Symbol>] platforms
+      #   Platforms with which to initialize the lists.
+      def initialize(platforms = [])
         @platforms = {}
         TYPES.keys.each do |type|
-            @platforms[type] =
-                List.new( self.class.const_get( type.to_s.upcase.to_sym ) )
+          @platforms[type] =
+            List.new(self.class.const_get(type.to_s.upcase.to_sym))
         end
 
         update platforms
-    end
+      end
 
-    # @!method os
-    #   @return [List]
-    #       Platform list for operating systems.
-    #
-    #   @see OS
+      # @!method os
+      #   @return [List]
+      #       Platform list for operating systems.
+      #
+      #   @see OS
 
-    # @!method db
-    #   @return [List]
-    #       Platform list for databases.
-    #
-    #   @see DB
+      # @!method db
+      #   @return [List]
+      #       Platform list for databases.
+      #
+      #   @see DB
 
-    # @!method servers
-    #   @return [List]
-    #       Platform list for web servers.
-    #
-    #   @see SERVERS
+      # @!method servers
+      #   @return [List]
+      #       Platform list for web servers.
+      #
+      #   @see SERVERS
 
-    # @!method languages
-    #   @return [List]
-    #       Platform list for languages.
-    #
-    #   @see LANGUAGES
+      # @!method languages
+      #   @return [List]
+      #       Platform list for languages.
+      #
+      #   @see LANGUAGES
 
-    # @!method frameworks
-    #   @return [List]
-    #       Platform list for frameworks.
-    #
-    #   @see FRAMEWORKS
+      # @!method frameworks
+      #   @return [List]
+      #       Platform list for frameworks.
+      #
+      #   @see FRAMEWORKS
 
-    [:os, :db, :servers, :languages, :frameworks].each do |type|
+      [:os, :db, :servers, :languages, :frameworks].each do |type|
         define_method type do
-            @platforms[type]
+          @platforms[type]
         end
-    end
+      end
 
-    # Converts a platform shortname to a full name.
-    #
-    # @param    [String, Symbol]   platform
-    #   Platform shortname.
-    #
-    # @return   [String]
-    #   Full name.
-    #
-    # @raise    [Error::Invalid]
-    #   On {#invalid?} platforms.
-    def fullname( platform )
-        PLATFORM_NAMES[normalize( platform )]
-    end
+      # Converts a platform shortname to a full name.
+      #
+      # @param    [String, Symbol]   platform
+      #   Platform shortname.
+      #
+      # @return   [String]
+      #   Full name.
+      #
+      # @raise    [Error::Invalid]
+      #   On {#invalid?} platforms.
+      def fullname(platform)
+        PLATFORM_NAMES[normalize(platform)]
+      end
 
-    # Selects appropriate data, depending on the applicable platforms,
-    # from `data_per_platform`.
-    #
-    # @param    [Hash{<Symbol, String> => Object}]   data_per_platform
-    #   Hash with platform names as keys and arbitrary data as values.
-    #
-    # @return   [Hash]
-    #   `data_per_platform` with non-applicable entries (for non-empty platform
-    #   lists) removed. Data for platforms whose list is empty will not be removed.
-    #
-    # @raise    [Error::Invalid]
-    #   On {#invalid?} platforms.
-    def pick( data_per_platform )
+      # Selects appropriate data, depending on the applicable platforms,
+      # from `data_per_platform`.
+      #
+      # @param    [Hash{<Symbol, String> => Object}]   data_per_platform
+      #   Hash with platform names as keys and arbitrary data as values.
+      #
+      # @return   [Hash]
+      #   `data_per_platform` with non-applicable entries (for non-empty platform
+      #   lists) removed. Data for platforms whose list is empty will not be removed.
+      #
+      # @raise    [Error::Invalid]
+      #   On {#invalid?} platforms.
+      def pick(data_per_platform)
         data_per_list = {}
         data_per_platform.each do |platform, value|
-            list = find_list( platform )
-            data_per_list[list]           ||= {}
-            data_per_list[list][platform]   = value
+          list = find_list(platform)
+          data_per_list[list] ||= {}
+          data_per_list[list][platform] = value
         end
 
         picked = {}
         data_per_list.each do |list, data|
-            # If a platform list is empty pass the given data without picking...
-            if list.empty?
-                picked.merge! data
-                next
-            end
+          # If a platform list is empty pass the given data without picking...
+          if list.empty?
+            picked.merge! data
+            next
+          end
 
-            # ...otherwise enforce its platform restrictions.
-            picked.merge! list.pick( data )
+          # ...otherwise enforce its platform restrictions.
+          picked.merge! list.pick(data)
         end
 
         picked
-    end
+      end
 
-    # @return   [Set<Symbol>]
-    #   List of valid platforms.
-    def valid
+      # @return   [Set<Symbol>]
+      #   List of valid platforms.
+      def valid
         self.class.valid
-    end
+      end
 
-    # @param    [Symbol, String]  platform
-    #   Platform to check.
-    #
-    # @return   [Boolean]
-    #   `true` if platform is valid (i.e. in {#valid}), `false` otherwise.
-    #
-    # @see #invalid?
-    def valid?( platform )
+      # @param    [Symbol, String]  platform
+      #   Platform to check.
+      #
+      # @return   [Boolean]
+      #   `true` if platform is valid (i.e. in {#valid}), `false` otherwise.
+      #
+      # @see #invalid?
+      def valid?(platform)
         valid.include? platform
-    end
+      end
 
-    # @param    [Symbol, String]  platform
-    #   Platform to check.
-    #
-    # @return   [Boolean]
-    #   `true` if platform is invalid (i.e. not in {#valid}), `false` otherwise.
-    #
-    # @see #invalid?
-    def invalid?( platform )
-        !valid?( platform )
-    end
+      # @param    [Symbol, String]  platform
+      #   Platform to check.
+      #
+      # @return   [Boolean]
+      #   `true` if platform is invalid (i.e. not in {#valid}), `false` otherwise.
+      #
+      # @see #invalid?
+      def invalid?(platform)
+        !valid?(platform)
+      end
 
-    # @param    [Block] block
-    #   Block to be passed each platform.
-    #
-    # @return   [Enumerator, Manager]
-    #   `Enumerator` if no `block` is given, `self` otherwise.
-    def each( &block )
-        return enum_for( __method__ ) if !block_given?
-        @platforms.map { |_, p| p.to_a }.flatten.each( &block )
+      # @param    [Block] block
+      #   Block to be passed each platform.
+      #
+      # @return   [Enumerator, Manager]
+      #   `Enumerator` if no `block` is given, `self` otherwise.
+      def each(&block)
+        return enum_for(__method__) if !block_given?
+        @platforms.map { |_, p| p.to_a }.flatten.each(&block)
         self
-    end
+      end
 
-    # @param    [Symbol, String]    platform
-    #   Platform to check.
-    #
-    # @return   [Boolean]
-    #   `true` if one of the lists contains the `platform`, `false` otherwise.
-    #
-    # @raise    [Error::Invalid]
-    #   On {#invalid?} `platforms`.
-    def include?( platform )
-        find_list( platform ).include?( platform )
-    end
+      # @param    [Symbol, String]    platform
+      #   Platform to check.
+      #
+      # @return   [Boolean]
+      #   `true` if one of the lists contains the `platform`, `false` otherwise.
+      #
+      # @raise    [Error::Invalid]
+      #   On {#invalid?} `platforms`.
+      def include?(platform)
+        find_list(platform).include?(platform)
+      end
 
-    # @return   [Boolean]
-    #   `true` if there are no applicable platforms, `false` otherwise.
-    def empty?
-        !@platforms.map { |_, p| p.empty? }.include?( false )
-    end
+      # @return   [Boolean]
+      #   `true` if there are no applicable platforms, `false` otherwise.
+      def empty?
+        !@platforms.map { |_, p| p.empty? }.include?(false)
+      end
 
-    # @return   [Boolean]
-    #   `true` if there are applicable platforms, `false` otherwise.
-    def any?
+      # @return   [Boolean]
+      #   `true` if there are applicable platforms, `false` otherwise.
+      def any?
         !empty?
-    end
+      end
 
-    def clear
+      def clear
         @platforms.clear
-    end
+      end
 
-    # @param    [Enumerable] enum
-    #   Enumerable object containing platforms.
-    #
-    # @return   [Manager]
-    #   Updated `self`.
-    #
-    # @raise    [Error::Invalid]
-    #   On {#invalid?} platforms.
-    def update( enum )
+      # @param    [Enumerable] enum
+      #   Enumerable object containing platforms.
+      #
+      # @return   [Manager]
+      #   Updated `self`.
+      #
+      # @raise    [Error::Invalid]
+      #   On {#invalid?} platforms.
+      def update(enum)
         enum.each { |p| self << p }
         self
-    end
+      end
 
-    # @param    [Symbol, String]    platform
-    #   Platform to add to the appropriate list.
-    #
-    # @return   [Manager]
-    #   `self`
-    #
-    # @raise    [Error::Invalid]
-    #   On {#invalid?} platforms.
-    def <<( platform )
-        find_list( platform ) << platform
+      # @param    [Symbol, String]    platform
+      #   Platform to add to the appropriate list.
+      #
+      # @return   [Manager]
+      #   `self`
+      #
+      # @raise    [Error::Invalid]
+      #   On {#invalid?} platforms.
+      def <<(platform)
+        find_list(platform) << platform
         self
-    end
+      end
 
-    # @param    [String, Symbol]    platform
-    #   Platform whose type to find
-    #
-    # @return   [Symbol]    Platform type.
-    def find_type( platform )
-        self.class.find_type( platform )
-    end
+      # @param    [String, Symbol]    platform
+      #   Platform whose type to find
+      #
+      # @return   [Symbol]    Platform type.
+      def find_type(platform)
+        self.class.find_type(platform)
+      end
 
-    # @param    [String, Symbol]    platform
-    #   Platform whose list to find.
-    #
-    # @return   [List]
-    #   Platform list.
-    def find_list( platform )
-        @platforms[find_type( normalize( platform ) )]
-    end
+      # @param    [String, Symbol]    platform
+      #   Platform whose list to find.
+      #
+      # @return   [List]
+      #   Platform list.
+      def find_list(platform)
+        @platforms[find_type(normalize(platform))]
+      end
 
-    private
+      private
 
-    def normalize( platform )
-        platform = List.normalize( platform )
-        fail Error::Invalid, "Invalid platform: #{platform}" if invalid?( platform )
+      def normalize(platform)
+        platform = List.normalize(platform)
+        fail Error::Invalid, "Invalid platform: #{platform}" if invalid?(platform)
         platform
+      end
     end
-
-end
-end
+  end
 end

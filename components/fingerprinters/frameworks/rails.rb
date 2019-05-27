@@ -7,37 +7,34 @@
 =end
 
 module Arachni
-module Platform::Fingerprinters
+  module Platform::Fingerprinters
 
-# Identifies Rails resources.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-# @version 0.1.1
-class Rails < Platform::Fingerprinter
+    # Identifies Rails resources.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    # @version 0.1.1
+    class Rails < Platform::Fingerprinter
+      IDs = %w(rails)
 
-    IDs = %w(rails)
-
-    def run
+      def run
         headers.keys.each do |header|
-            return update_platforms if header.start_with?( 'x-rails' )
+          return update_platforms if header.start_with?("x-rails")
         end
 
         IDs.each do |id|
-            next if !server_or_powered_by_include? id
+          next if !server_or_powered_by_include? id
 
-            return update_platforms
+          return update_platforms
         end
 
-        if cookies.include?( '_rails_admin_session' )
-            update_platforms
+        if cookies.include?("_rails_admin_session")
+          update_platforms
         end
-    end
+      end
 
-    def update_platforms
+      def update_platforms
         platforms << :ruby << :rack << :rails
+      end
     end
-
-end
-
-end
+  end
 end

@@ -7,28 +7,27 @@
 =end
 
 module Arachni
-class Framework
-module Parts
+  class Framework
+    module Parts
 
-# Provides access to {Arachni::Platform} helpers.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-module Platform
+      # Provides access to {Arachni::Platform} helpers.
+      #
+      # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+      module Platform
 
-    # @return    [Array<Hash>]
-    #   Information about all available platforms.
-    def list_platforms
-        platforms = Arachni::Platform::Manager.new
-        platforms.valid.inject({}) do |h, platform|
-            type = Arachni::Platform::Manager::TYPES[platforms.find_type( platform )]
+        # @return    [Array<Hash>]
+        #   Information about all available platforms.
+        #   所有有效的平台信息
+        def list_platforms
+          platforms = Arachni::Platform::Manager.new
+          platforms.valid.inject({}) do |h, platform|
+            type = Arachni::Platform::Manager::TYPES[platforms.find_type(platform)]
             h[type] ||= {}
-            h[type][platform] = platforms.fullname( platform )
+            h[type][platform] = platforms.fullname(platform)
             h
+          end
         end
+      end
     end
-
-end
-
-end
-end
+  end
 end

@@ -7,22 +7,19 @@
 =end
 
 module Arachni
-module Platform::Fingerprinters
+  module Platform::Fingerprinters
 
-#
-# Identifies Nginx web servers.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-#
-# @version 0.1
-#
-class Nginx < Platform::Fingerprinter
-
-    def run
-        platforms << :nginx if server_or_powered_by_include? 'nginx'
+    #
+    # Identifies Nginx web servers.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    #
+    # @version 0.1
+    #
+    class Nginx < Platform::Fingerprinter
+      def run
+        platforms << :nginx if server_or_powered_by_include? "nginx"
+      end
     end
-
-end
-
-end
+  end
 end

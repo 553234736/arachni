@@ -8,101 +8,108 @@
 
 module Arachni
 
-# The namespace under which all plugins exist.
-module Plugins
-end
+  # The namespace under which all plugins exist.
+  module Plugins
+  end
 
-module Plugin
-
-class Error < Arachni::Error
-    class UnsatisfiedDependency < Error
+  module Plugin
+    class Error < Arachni::Error
+      class UnsatisfiedDependency < Error
+      end
     end
-end
 
-# Holds and manages the {Plugins}.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-class Manager < Arachni::Component::Manager
-    include MonitorMixin
+    # Holds and manages the {Plugins}.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    class Manager < Arachni::Component::Manager
+      include MonitorMixin
 
-    # Namespace under which all plugins reside.
-    NAMESPACE = Arachni::Plugins
+      # Namespace under which all plugins reside.
+      # 所有插件所在的命名空间。
+      NAMESPACE = Arachni::Plugins
 
-    # Expressions matching default plugins.
-    DEFAULT   = %w(defaults/*)
+      # Expressions matching default plugins.
+      # 表达式匹配默认插件。
+      DEFAULT = %w(defaults/*)
 
-    # @param    [Arachni::Framework]    framework
-    #   Framework instance.
-    def initialize( framework )
-        super( framework.options.paths.plugins, NAMESPACE )
+      # @param    [Arachni::Framework]    framework
+      #   Framework instance.
+      #   初始化插件实例
+      def initialize(framework)
+        super(framework.options.paths.plugins, NAMESPACE)
         @framework = framework
 
         @jobs = {}
-    end
+      end
 
-    # Loads the default plugins.
-    #
-    # @see DEFAULT
-    def load_default
+      # Loads the default plugins.
+      # 加载默认的插件
+      #
+      # @see DEFAULT
+      def load_default
         load DEFAULT
-    end
-    alias :load_defaults :load_default
+      end
 
-    # @return   [Array<String>]
-    #   Components to load, by name.
-    def default
+      alias :load_defaults :load_default
+
+      # @return   [Array<String>]
+      #   Components to load, by name.
+      #   按照名称加载组件
+      def default
         parse DEFAULT
-    end
-    alias :defaults :default
+      end
 
-    # Runs each plug-in in its own thread.
-    #
-    # @raise [Error::UnsatisfiedDependency]
-    #   If the environment is {#sane_env? not sane}.
-    def run
-        print_status 'Preparing plugins...'
+      alias :defaults :default
+
+      # Runs each plug-in in its own thread.
+      # 在每一个线程中运行插件
+      #
+      # @raise [Error::UnsatisfiedDependency]
+      #   If the environment is {#sane_env? not sane}.
+      def run
+        print_status "Preparing plugins..."
 
         schedule.each do |name, options|
-            instance = create( name, options )
+          instance = create(name, options)
 
-            exception_jail do
-                instance.prepare
-            end rescue next
+          exception_jail do
+            instance.prepare
+          end rescue next
 
-            @jobs[name] = Thread.new do
-                exception_jail( false ) do
-                    Thread.current[:instance] = instance
-                    Thread.current[:instance].run
-                    Thread.current[:instance].clean_up
-                end
-
-                synchronize do
-                    @jobs.delete name
-                end
+          @jobs[name] = Thread.new do
+            exception_jail(false) do
+              Thread.current[:instance] = instance
+              Thread.current[:instance].run
+              Thread.current[:instance].clean_up
             end
+
+            synchronize do
+              @jobs.delete name
+            end
+          end
         end
 
-        print_status '... done.'
-    end
+        print_status "... done."
+      end
 
-    # @return   [Hash]
-    #   Sorted plugins (by priority) with their prepared options.
-    #
-    # @raise [Error::UnsatisfiedDependency]
-    #   If the environment is not {#sane_env? sane}.
-    def schedule
-        ordered   = []
+      # @return   [Hash]
+      #   Sorted plugins (by priority) with their prepared options.
+      #   使用准备好的选项对插件进行排序（按优先级排序）。
+      # @raise [Error::UnsatisfiedDependency]
+      #   If the environment is not {#sane_env? sane}.
+      def schedule
+        ordered = []
         unordered = []
 
         loaded.each do |name|
-            ph = { name => self[name] }
+          ph = { name => self[name] }
 
-            if (order = self[name].info[:priority])
-                ordered[order] ||= []
-                ordered[order] << ph
-            else
-                unordered << ph
-            end
+          if (order = self[name].info[:priority])
+            ordered[order] ||= []
+            ordered[order] << ph
+          else
+            unordered << ph
+          end
         end
 
         ordered << unordered
@@ -110,177 +117,178 @@ class Manager < Arachni::Component::Manager
         ordered.compact!
 
         ordered.inject({}) do |h, ph|
-            name   = ph.keys.first
-            plugin = ph.values.first
+          name = ph.keys.first
+          plugin = ph.values.first
 
-            if (ret = sane_env?( plugin )) != true
-                deps = ''
-                if !ret[:gem_errors].empty?
-                    print_bad "[#{name}] The following plug-in dependencies aren't satisfied:"
-                    ret[:gem_errors].each { |gem| print_bad "\t* #{gem}" }
+          if (ret = sane_env?(plugin)) != true
+            deps = ""
+            if !ret[:gem_errors].empty?
+              print_bad "[#{name}] The following plug-in dependencies aren't satisfied:"
+              ret[:gem_errors].each { |gem| print_bad "\t* #{gem}" }
 
-                    deps = ret[:gem_errors].join( ' ' )
-                    print_bad 'Try installing them by running:'
-                    print_bad "\tgem install #{deps}"
-                end
-
-                fail Error::UnsatisfiedDependency,
-                     "Plug-in dependencies not met: #{name} -- #{deps}"
+              deps = ret[:gem_errors].join(" ")
+              print_bad "Try installing them by running:"
+              print_bad "\tgem install #{deps}"
             end
 
-            h[name.to_sym] = prepare_options(
-                name, plugin, @framework.options.plugins[name]
-            )
-            h
-        end
-    end
+            fail Error::UnsatisfiedDependency,
+                 "Plug-in dependencies not met: #{name} -- #{deps}"
+          end
 
-    # Checks whether or not the environment satisfies all plugin dependencies.
-    #
-    # @return   [TrueClass, Hash]
-    #   `true` if the environment is sane, a hash with errors otherwise.
-    def sane_env?( plugin )
+          h[name.to_sym] = prepare_options(
+            name, plugin, @framework.options.plugins[name]
+          )
+          h
+        end
+      end
+
+      # Checks whether or not the environment satisfies all plugin dependencies.
+      # 检查环境是否满足所有插件依赖性。
+      #
+      # @return   [TrueClass, Hash]
+      #   `true` if the environment is sane, a hash with errors otherwise.
+      def sane_env?(plugin)
         gem_errors = []
 
         plugin.gems.each do |gem|
-            begin
-                require gem
-            rescue LoadError
-                gem_errors << gem
-            end
+          begin
+            require gem
+          rescue LoadError
+            gem_errors << gem
+          end
         end
 
         return { gem_errors: gem_errors } if !gem_errors.empty?
         true
-    end
+      end
 
-    def create( name, options = {} )
-        self[name].new( @framework, options )
-    end
+      def create(name, options = {})
+        self[name].new(@framework, options)
+      end
 
-    # Blocks until all plug-ins have finished executing.
-    def block
+      # Blocks until all plug-ins have finished executing.
+      # 阻塞，直到所有的插件已经执行完毕。
+      def block
         while busy?
-            print_debug
-            print_debug "Waiting on #{@jobs.size} plugins to finish:"
-            print_debug job_names.join( ', ' )
-            print_debug
+          print_debug
+          print_debug "Waiting on #{@jobs.size} plugins to finish:"
+          print_debug job_names.join(", ")
+          print_debug
 
-            synchronize do
-                @jobs.select! { |_ ,j| j.alive? }
-            end
+          synchronize do
+            @jobs.select! { |_, j| j.alive? }
+          end
 
-            sleep 0.1
+          sleep 0.1
         end
         nil
-    end
+      end
 
-    def suspend
+      def suspend
         @jobs.dup.each do |name, job|
-            next if !job.alive?
-            plugin = job[:instance]
+          next if !job.alive?
+          plugin = job[:instance]
 
-            state.store( name,
-                data:    plugin.suspend,
-                options: plugin.options
-            )
+          state.store(name,
+                      data: plugin.suspend,
+                      options: plugin.options)
 
-            kill name
+          kill name
         end
 
         nil
-    end
+      end
 
-    def restore
+      def restore
         schedule.each do |name, options|
-            @jobs[name] = Thread.new do
-                exception_jail( false ) do
-                    if state.include? name
-                        Thread.current[:instance] = create( name, state[name][:options] )
-                        Thread.current[:instance].restore state[name][:data]
-                    else
-                        Thread.current[:instance] = create( name, options )
-                        Thread.current[:instance].prepare
-                    end
+          @jobs[name] = Thread.new do
+            exception_jail(false) do
+              if state.include? name
+                Thread.current[:instance] = create(name, state[name][:options])
+                Thread.current[:instance].restore state[name][:data]
+              else
+                Thread.current[:instance] = create(name, options)
+                Thread.current[:instance].prepare
+              end
 
-                    Thread.current[:instance].run
-                    Thread.current[:instance].clean_up
+              Thread.current[:instance].run
+              Thread.current[:instance].clean_up
 
-                    synchronize do
-                        @jobs.delete name
-                    end
-                end
+              synchronize do
+                @jobs.delete name
+              end
             end
+          end
         end
 
         return if @jobs.empty?
 
-        print_status 'Waiting for plugins to settle...'
+        print_status "Waiting for plugins to settle..."
         sleep 1
 
         nil
-    end
+      end
 
-    # @return   [Bool]
-    #   `false` if all plug-ins have finished executing, `true` otherwise.
-    def busy?
+      # @return   [Bool]
+      #   `false` if all plug-ins have finished executing, `true` otherwise.
+      def busy?
         @jobs.any?
-    end
+      end
 
-    # @return   [Array]
-    #   Names of all running plug-ins.
-    def job_names
+      # @return   [Array]
+      #   Names of all running plug-ins.
+      def job_names
         @jobs.keys
-    end
+      end
 
-    # @return   [Hash{String=>Thread}]
-    #   All the running threads.
-    def jobs
+      # @return   [Hash{String=>Thread}]
+      #   All the running threads.
+      def jobs
         @jobs
-    end
+      end
 
-    # Kills a plug-in by `name`.
-    #
-    # @param    [String]    name
-    def kill( name )
+      # Kills a plug-in by `name`.
+      #
+      # @param    [String]    name
+      def kill(name)
         synchronize do
-            job = @jobs.delete( name.to_sym )
-            return true if job && job.kill
+          job = @jobs.delete(name.to_sym)
+          return true if job && job.kill
         end
         false
-    end
+      end
 
-    def killall
+      def killall
         synchronize do
-            @jobs.values.each(&:kill)
-            @jobs.clear
-            true
+          @jobs.values.each(&:kill)
+          @jobs.clear
+          true
         end
-    end
+      end
 
-    def state
+      def state
         State.plugins
-    end
+      end
 
-    def data
+      def data
         Data.plugins
-    end
+      end
 
-    def results
+      def results
         data.results
-    end
+      end
 
-    def self.reset
+      def self.reset
         State.plugins.clear
         Data.plugins.clear
-        remove_constants( NAMESPACE )
-    end
-    def reset
+        remove_constants(NAMESPACE)
+      end
+
+      def reset
         killall
         clear
         self.class.reset
+      end
     end
-
-end
-end
+  end
 end

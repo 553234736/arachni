@@ -7,46 +7,47 @@
 =end
 
 module Arachni
-class Framework
-module Parts
+  class Framework
+    module Parts
 
-# Provides access to {Arachni::State::Framework} and helpers.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-module State
+      # Provides access to {Arachni::State::Framework} and helpers.
+      #
+      # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+      module State
+        def self.included(base)
+          base.extend ClassMethods
+        end
 
-    def self.included( base )
-        base.extend ClassMethods
-    end
+        module ClassMethods
 
-    module ClassMethods
-
-        # @param   [String]    afs
-        #   Path to an `.afs.` (Arachni Framework Snapshot) file created by
-        #   {#suspend}.
-        #
-        # @return   [Framework]
-        #   Restored instance.
-        def restore( afs, &block )
+          # @param   [String]    afs
+          #   Path to an `.afs.` (Arachni Framework Snapshot) file created by
+          #   {#suspend}.
+          #   暂停时保存页面快照
+          # @return   [Framework]
+          #   Restored instance.
+          def restore(afs, &block)
             framework = new
-            framework.restore( afs )
+            framework.restore(afs)
 
             if block_given?
-                begin
-                    block.call framework
-                ensure
-                    framework.clean_up
-                    framework.reset
-                end
+              begin
+                block.call framework
+              ensure
+                framework.clean_up
+                framework.reset
+              end
             end
 
             framework
-        end
+          end
 
-        # @note You should first reset {Arachni::Options}.
-        #
-        # Resets everything and allows the framework environment to be re-used.
-        def reset
+          # @note You should first reset {Arachni::Options}.
+          #   您应该首先重置{Arachni::Options}。
+          #
+          # Resets everything and allows the framework environment to be re-used.
+          # 重置所有内容并允许重用框架环境。
+          def reset
             Arachni::State.clear
             Arachni::Data.clear
 
@@ -59,407 +60,433 @@ module State
             Arachni::Plugin::Manager.reset
             Arachni::Reporter::Manager.reset
             HTTP::Client.reset
+          end
         end
-    end
 
-    def initialize
-        super
+        def initialize
+          super
 
-        Element::Capabilities::Auditable.skip_like do |element|
+          Element::Capabilities::Auditable.skip_like do |element|
             if pause?
-                print_debug "Blocking on element audit: #{element.audit_id}"
+              print_debug "Blocking on element audit: #{element.audit_id}"
             end
-
+            # 等待直到按下暂停
             wait_if_paused
+          end
+
+          state.status = :ready
         end
 
-        state.status = :ready
-    end
+        # @return   [String]
+        #   Provisioned {#suspend} dump file for this instance.
+        #   为此实例配置了{#suspend}转储文件。
+        def snapshot_path
+          return @state_archive if @state_archive
 
-    # @return   [String]
-    #   Provisioned {#suspend} dump file for this instance.
-    def snapshot_path
-        return @state_archive if @state_archive
+          default_filename =
+            "#{URI(options.url).host} #{Time.now.to_s.gsub(":", "_")} " <<
+              "#{generate_token}.afs"
 
-        default_filename =
-            "#{URI(options.url).host} #{Time.now.to_s.gsub( ':', '_' )} " <<
-                "#{generate_token}.afs"
+          location = options.snapshot.save_path
 
-        location = options.snapshot.save_path
-
-        if !location
+          if !location
             location = default_filename
-        elsif File.directory? location
+          elsif File.directory? location
             location += "/#{default_filename}"
+          end
+
+          @state_archive ||= File.expand_path(location)
         end
 
-        @state_archive ||= File.expand_path( location )
-    end
+        # Cleans up the framework; should be called after running the audit or
+        # after canceling a running scan.
+        # 清理框架; 应在运行审核后或取消正在运行的扫描后调用。
+        # It stops the clock and waits for the plugins to finish up.
+        # 它会停止计时并等待插件完成。
+        def clean_up(shutdown_browsers = true)
+          return if @cleaned_up
+          @cleaned_up = true
 
-    # Cleans up the framework; should be called after running the audit or
-    # after canceling a running scan.
-    #
-    # It stops the clock and waits for the plugins to finish up.
-    def clean_up( shutdown_browsers = true )
-        return if @cleaned_up
-        @cleaned_up = true
+          state.force_resume
 
-        state.force_resume
+          state.status = :cleanup
 
-        state.status = :cleanup
-
-        if shutdown_browsers
+          if shutdown_browsers
             state.set_status_message :browser_cluster_shutdown
             shutdown_browser_cluster
+          end
+
+          state.set_status_message :clearing_queues
+          page_queue.clear
+          url_queue.clear
+
+          @finish_datetime = Time.now
+          @start_datetime ||= Time.now
+
+          # Make sure this is disabled or it'll break reporter output.
+          disable_only_positives
+
+          state.running = false
+
+          state.set_status_message :waiting_for_plugins
+          @plugins.block
+
+          # Plugins may need the session right till the very end so save it for last.
+          @session.clean_up
+          @session = nil
+
+          true
         end
 
-        state.set_status_message :clearing_queues
-        page_queue.clear
-        url_queue.clear
+        # @private
+        def reset_trainer
+          @trainer = Trainer.new(self)
+        end
 
-        @finish_datetime  = Time.now
-        @start_datetime ||= Time.now
+        # @note Prefer this from {.reset} if you already have an instance.
+        #   如果您已有实例，则首选{.reset}。
+        # @note You should first reset {Arachni::Options}.
+        #   您应该首先重置{Arachni :: Options}。
+        #
+        # Resets everything and allows the framework to be re-used.
+        # 重置所有内容并允许重用框架。
+        def reset
+          @cleaned_up = false
+          @browser_job = nil
 
-        # Make sure this is disabled or it'll break reporter output.
-        disable_only_positives
+          @failures.clear
+          @retries.clear
 
-        state.running = false
+          # This needs to happen before resetting the other components so they
+          # will be able to put in their hooks.
+          self.class.reset
 
-        state.set_status_message :waiting_for_plugins
-        @plugins.block
+          clear_observers
+          reset_trainer
+          reset_session
 
-        # Plugins may need the session right till the very end so save it for last.
-        @session.clean_up
-        @session = nil
+          @checks.clear
+          @reporters.clear
+          @plugins.clear
+        end
 
-        true
-    end
+        # @return   [State::Framework]
+        def state
+          Arachni::State.framework
+        end
 
-    # @private
-    def reset_trainer
-        @trainer = Trainer.new( self )
-    end
+        # @param   [String]    afs
+        #   Path to an `.afs.` (Arachni Framework Snapshot) file created by {#suspend}.
+        #
+        # @return   [Framework]
+        #   Restored instance.
+        def restore(afs)
+          Snapshot.load afs
 
-    # @note Prefer this from {.reset} if you already have an instance.
-    # @note You should first reset {Arachni::Options}.
-    #
-    # Resets everything and allows the framework to be re-used.
-    def reset
-        @cleaned_up  = false
-        @browser_job = nil
+          browser_job_update_skip_states state.browser_skip_states
 
-        @failures.clear
-        @retries.clear
+          checks.load Options.checks
+          plugins.load Options.plugins.keys
 
-        # This needs to happen before resetting the other components so they
-        # will be able to put in their hooks.
-        self.class.reset
+          nil
+        end
 
-        clear_observers
-        reset_trainer
-        reset_session
+        # @return   [Array<String>]
+        #   Messages providing more information about the current {#status} of
+        #   the framework.
+        #   提供有关框架当前{#status}的更多信息。
+        def status_messages
+          state.status_messages
+        end
 
-        @checks.clear
-        @reporters.clear
-        @plugins.clear
-    end
+        # @return   [Symbol]
+        #   Status of the instance, possible values are (in order):
+        #
+        #   * `:ready` -- {#initialize Initialised} and waiting for instructions.
+        #   * `:preparing` -- Getting ready to start (i.e. initializing plugins etc.).
+        #   * `:scanning` -- The instance is currently {#run auditing} the webapp.
+        #   * `:pausing` -- The instance is being {#pause paused} (if applicable).
+        #   * `:paused` -- The instance has been {#pause paused} (if applicable).
+        #   * `:suspending` -- The instance is being {#suspend suspended} (if applicable).
+        #   * `:suspended` -- The instance has being {#suspend suspended} (if applicable).
+        #   * `:cleanup` -- The scan has completed and the instance is
+        #       {Framework::Parts::State#clean_up cleaning up} after itself (i.e. waiting for
+        #       plugins to finish etc.).
+        #   * `:aborted` -- The scan has been {Framework::Parts::State#abort}, you can grab the
+        #       report and shutdown.
+        #   * `:done` -- The scan has completed, you can grab the report and shutdown.
 
-    # @return   [State::Framework]
-    def state
-        Arachni::State.framework
-    end
+        # @return   [Symbol]
+        #   实例的状态，可能的值是（按顺序）：
+        #
+        #   * `:ready` -- {#initialize Initialised}并等待指示。
+        #   * `:preparing` -- 准备开始（即初始化插件等）。
+        #   * `:scanning` -- 该实例目前正在{#正在运行审核} webapp。
+        #   * `:pausing` -- 该实例正在暂停中{#pause paused}（如果适用）。
+        #   * `:paused` -- 该实例正在已经暂停{#pause paused}（如果适用）
+        #   * `:suspending` -- 该实例正在中断中
+        #   * `:suspended` -- 该实例已经中断
+        #   * `:cleanup` -- 扫描已经结束，实例正在自身清理中。（需等待插件完成）
+        #   * `:aborted` -- 扫描已经终止，您可以抓取报告并关闭。
+        #   * `:done` -- 扫描完成后，您可以抓取报告并关闭。
+        def status
+          state.status
+        end
 
-    # @param   [String]    afs
-    #   Path to an `.afs.` (Arachni Framework Snapshot) file created by {#suspend}.
-    #
-    # @return   [Framework]
-    #   Restored instance.
-    def restore( afs )
-        Snapshot.load afs
+        # @return   [Bool]
+        #   `true` if the framework is running, `false` otherwise. This is `true`
+        #   even if the scan is {#paused?}.
+        # 判断是否在运行中
+        def running?
+          state.running?
+        end
 
-        browser_job_update_skip_states state.browser_skip_states
+        # @return   [Bool]
+        #   `true` if the system is scanning, `false` otherwise.
+        def scanning?
+          state.scanning?
+        end
 
-        checks.load  Options.checks
-        plugins.load Options.plugins.keys
+        # @return   [Bool]
+        #   `true` if the framework is paused, `false` otherwise.
+        def paused?
+          state.paused?
+        end
 
-        nil
-    end
+        # @return   [Bool]
+        #   `true` if the framework has been instructed to pause (i.e. is in the
+        #   process of being paused or has been paused), `false` otherwise.
+        def pause?
+          state.pause?
+        end
 
-    # @return   [Array<String>]
-    #   Messages providing more information about the current {#status} of
-    #   the framework.
-    def status_messages
-        state.status_messages
-    end
+        # @return   [Bool]
+        #   `true` if the framework is in the process of pausing, `false` otherwise.
+        def pausing?
+          state.pausing?
+        end
 
-    # @return   [Symbol]
-    #   Status of the instance, possible values are (in order):
-    #
-    #   * `:ready` -- {#initialize Initialised} and waiting for instructions.
-    #   * `:preparing` -- Getting ready to start (i.e. initializing plugins etc.).
-    #   * `:scanning` -- The instance is currently {#run auditing} the webapp.
-    #   * `:pausing` -- The instance is being {#pause paused} (if applicable).
-    #   * `:paused` -- The instance has been {#pause paused} (if applicable).
-    #   * `:suspending` -- The instance is being {#suspend suspended} (if applicable).
-    #   * `:suspended` -- The instance has being {#suspend suspended} (if applicable).
-    #   * `:cleanup` -- The scan has completed and the instance is
-    #       {Framework::Parts::State#clean_up cleaning up} after itself (i.e. waiting for
-    #       plugins to finish etc.).
-    #   * `:aborted` -- The scan has been {Framework::Parts::State#abort}, you can grab the
-    #       report and shutdown.
-    #   * `:done` -- The scan has completed, you can grab the report and shutdown.
-    def status
-        state.status
-    end
+        # @return   (see Arachni::State::Framework#done?)
+        def done?
+          state.done?
+        end
 
-    # @return   [Bool]
-    #   `true` if the framework is running, `false` otherwise. This is `true`
-    #   even if the scan is {#paused?}.
-    def running?
-        state.running?
-    end
+        # @note Each call from a unique caller is counted as a pause request
+        #   and in order for the system to resume **all** pause callers need to
+        #   {#resume} it.
+        #
+        # Pauses the framework on a best effort basis.
+        #
+        # @param    [Bool]  wait
+        #   Wait until the system has been paused.
+        #
+        # @return   [Integer]
+        #   ID identifying this pause request.
+        def pause(wait = true)
+          id = generate_token.hash
+          state.pause id, wait
+          id
+        end
 
-    # @return   [Bool]
-    #   `true` if the system is scanning, `false` otherwise.
-    def scanning?
-        state.scanning?
-    end
+        # @return   [Bool]
+        #   `true` if the framework {#run} has been aborted, `false` otherwise.
+        def aborted?
+          state.aborted?
+        end
 
-    # @return   [Bool]
-    #   `true` if the framework is paused, `false` otherwise.
-    def paused?
-        state.paused?
-    end
+        # @return   [Bool]
+        #   `true` if the framework has been instructed to abort (i.e. is in the
+        #   process of being aborted or has been aborted), `false` otherwise.
+        def abort?
+          state.abort?
+        end
 
-    # @return   [Bool]
-    #   `true` if the framework has been instructed to pause (i.e. is in the
-    #   process of being paused or has been paused), `false` otherwise.
-    def pause?
-        state.pause?
-    end
+        # @return   [Bool]
+        #   `true` if the framework is in the process of aborting, `false` otherwise.
+        def aborting?
+          state.aborting?
+        end
 
-    # @return   [Bool]
-    #   `true` if the framework is in the process of pausing, `false` otherwise.
-    def pausing?
-        state.pausing?
-    end
+        # Aborts the framework {#run} on a best effort basis.
+        #
+        # @param    [Bool]  wait
+        #   Wait until the system has been aborted.
+        def abort(wait = true)
+          state.abort wait
+        end
 
-    # @return   (see Arachni::State::Framework#done?)
-    def done?
-        state.done?
-    end
+        # @note Each call from a unique caller is counted as a pause request
+        #   and in order for the system to resume **all** pause callers need to
+        #   {#resume} it.
+        #
+        # Removes a {#pause} request for the current caller.
+        #
+        # @param    [Integer]   id
+        #   ID of the {#pause} request.
+        def resume(id)
+          state.resume id
+        end
 
-    # @note Each call from a unique caller is counted as a pause request
-    #   and in order for the system to resume **all** pause callers need to
-    #   {#resume} it.
-    #
-    # Pauses the framework on a best effort basis.
-    #
-    # @param    [Bool]  wait
-    #   Wait until the system has been paused.
-    #
-    # @return   [Integer]
-    #   ID identifying this pause request.
-    def pause( wait = true )
-        id = generate_token.hash
-        state.pause id, wait
-        id
-    end
+        # Writes a {Snapshot.dump} to disk and aborts the scan.
+        #
+        # @param   [Bool]  wait
+        #   Wait for the system to write it state to disk.
+        #
+        # @return   [String,nil]
+        #   Path to the state file `wait` is `true`, `nil` otherwise.
+        def suspend(wait = true)
+          state.suspend(wait)
+          return snapshot_path if wait
+          nil
+        end
 
-    # @return   [Bool]
-    #   `true` if the framework {#run} has been aborted, `false` otherwise.
-    def aborted?
-        state.aborted?
-    end
+        # @return   [Bool]
+        #   `true` if the system is in the process of being suspended, `false`
+        #   otherwise.
+        def suspend?
+          state.suspend?
+        end
 
-    # @return   [Bool]
-    #   `true` if the framework has been instructed to abort (i.e. is in the
-    #   process of being aborted or has been aborted), `false` otherwise.
-    def abort?
-        state.abort?
-    end
+        # @return   [Bool]
+        #   `true` if the system has been suspended, `false` otherwise.
+        def suspended?
+          state.suspended?
+        end
 
-    # @return   [Bool]
-    #   `true` if the framework is in the process of aborting, `false` otherwise.
-    def aborting?
-        state.aborting?
-    end
+        private
 
-    # Aborts the framework {#run} on a best effort basis.
-    #
-    # @param    [Bool]  wait
-    #   Wait until the system has been aborted.
-    def abort( wait = true )
-        state.abort wait
-    end
+        # @note Must be called before calling any audit methods.
+        #
+        # Prepares the framework for the audit.
+        # 准备审计框架。
+        # * Sets the status to `:preparing`.
+        # * Starts the clock.
+        # * Runs the plugins.
+        def prepare
+          state.status = :preparing
+          state.running = true
+          @start_datetime = Time.now
 
-    # @note Each call from a unique caller is counted as a pause request
-    #   and in order for the system to resume **all** pause callers need to
-    #   {#resume} it.
-    #
-    # Removes a {#pause} request for the current caller.
-    #
-    # @param    [Integer]   id
-    #   ID of the {#pause} request.
-    def resume( id )
-        state.resume id
-    end
+          Snapshot.restored? ? @plugins.restore : @plugins.run
+        end
 
-    # Writes a {Snapshot.dump} to disk and aborts the scan.
-    #
-    # @param   [Bool]  wait
-    #   Wait for the system to write it state to disk.
-    #
-    # @return   [String,nil]
-    #   Path to the state file `wait` is `true`, `nil` otherwise.
-    def suspend( wait = true )
-        state.suspend( wait )
-        return snapshot_path if wait
-        nil
-    end
+        def reset_session
+          @session.clean_up if @session
+          @session = Session.new
+        end
 
-    # @return   [Bool]
-    #   `true` if the system is in the process of being suspended, `false`
-    #   otherwise.
-    def suspend?
-        state.suspend?
-    end
+        # Small but (sometimes) important optimization:
+        # 虽然小，但有时重要的优化：
+        #/
+        # Keep track of page elements which have already been passed to checks,
+        # in order to filter them out and hopefully even avoid running checks
+        # against pages with no new elements.
+        # 跟踪已经传递给检查的页面元素，以便将它们过滤掉，并希望甚至避免对没有新元素的页面运行检查。
+        #
+        # It's not like there were going to be redundant audits anyways, because
+        # each layer of the audit performs its own redundancy checks, but those
+        # redundancy checks can introduce significant latencies when dealing
+        # with pages with lots of elements.
+        # 不管怎么说都不会有多余的审计，因为审计的每一层都执行自己的冗余检查，
+        # 但这些冗余检查在处理包含大量元素的页面时会引入显着的延迟。
+        def pre_audit_element_filter(page)
+          unique_elements = {}
+          page.elements.each do |e|
+            next if !Options.audit.element?(e.type)
+            next if e.is_a?(Cookie) || e.is_a?(Header)
 
-    # @return   [Bool]
-    #   `true` if the system has been suspended, `false` otherwise.
-    def suspended?
-        state.suspended?
-    end
-
-    private
-
-    # @note Must be called before calling any audit methods.
-    #
-    # Prepares the framework for the audit.
-    #
-    # * Sets the status to `:preparing`.
-    # * Starts the clock.
-    # * Runs the plugins.
-    def prepare
-        state.status  = :preparing
-        state.running = true
-        @start_datetime = Time.now
-
-        Snapshot.restored? ? @plugins.restore : @plugins.run
-    end
-
-    def reset_session
-        @session.clean_up if @session
-        @session = Session.new
-    end
-
-    # Small but (sometimes) important optimization:
-    #
-    # Keep track of page elements which have already been passed to checks,
-    # in order to filter them out and hopefully even avoid running checks
-    # against pages with no new elements.
-    #
-    # It's not like there were going to be redundant audits anyways, because
-    # each layer of the audit performs its own redundancy checks, but those
-    # redundancy checks can introduce significant latencies when dealing
-    # with pages with lots of elements.
-    def pre_audit_element_filter( page )
-        unique_elements  = {}
-        page.elements.each do |e|
-            next if !Options.audit.element?( e.type )
-            next if e.is_a?( Cookie ) || e.is_a?( Header )
-
-            new_element               = false
+            new_element = false
             unique_elements[e.type] ||= []
 
-            if !state.element_checked?( e )
-                state.element_checked e
-                new_element = true
+            if !state.element_checked?(e)
+              state.element_checked e
+              new_element = true
             end
 
-            if page.dom.depth > 0 && e.respond_to?( :dom ) && e.dom
-                if !state.element_checked?( e.dom )
-                    state.element_checked e.dom
-                    new_element = true
-                end
+            if page.dom.depth > 0 && e.respond_to?(:dom) && e.dom
+              if !state.element_checked?(e.dom)
+                state.element_checked e.dom
+                new_element = true
+              end
             end
 
             next if !new_element
 
             unique_elements[e.type] << e
+          end
+
+          # Remove redundant elements from the page cache, if there are thousands
+          # of them then just skipping them during the audit will introduce latency.
+          #   从页面缓存中删除冗余元素，如果有数千个，那么在审计期间只是跳过它们会引入延迟。
+          unique_elements.each do |type, elements|
+            page.send("#{type}s=", elements)
+          end
+
+          page
         end
 
-        # Remove redundant elements from the page cache, if there are thousands
-        # of them then just skipping them during the audit will introduce latency.
-        unique_elements.each do |type, elements|
-            page.send( "#{type}s=", elements )
+        # 处理信号量
+        def handle_signals
+          wait_if_paused
+          abort_if_signaled
+          suspend_if_signaled
         end
 
-        page
-    end
+        def wait_if_paused
+          state.paused if pause?
+          sleep 0.2 while pause? && !abort?
+        end
 
-    def handle_signals
-        wait_if_paused
-        abort_if_signaled
-        suspend_if_signaled
-    end
+        def abort_if_signaled
+          return if !abort?
+          clean_up
+          state.aborted
+        end
 
-    def wait_if_paused
-        state.paused if pause?
-        sleep 0.2 while pause? && !abort?
-    end
+        def suspend_if_signaled
+          return if !suspend?
+          suspend_to_disk
+        end
 
-    def abort_if_signaled
-        return if !abort?
-        clean_up
-        state.aborted
-    end
-
-    def suspend_if_signaled
-        return if !suspend?
-        suspend_to_disk
-    end
-
-    def suspend_to_disk
-        while wait_for_browser_cluster?
+        def suspend_to_disk
+          while wait_for_browser_cluster?
             last_pending_jobs ||= 0
             pending_jobs = browser_cluster.pending_job_counter
 
             if pending_jobs != last_pending_jobs
-                state.set_status_message :waiting_for_browser_cluster_jobs, pending_jobs
-                print_info "Suspending: #{status_messages.first}"
+              state.set_status_message :waiting_for_browser_cluster_jobs, pending_jobs
+              print_info "Suspending: #{status_messages.first}"
             end
 
             last_pending_jobs = pending_jobs
             sleep 0.1
-        end
+          end
 
-        # Make sure the component options are up to date with what's actually
-        # happening.
-        options.checks  = checks.loaded
-        options.plugins = plugins.loaded.
+          # Make sure the component options are up to date with what's actually
+          # happening.
+          # 确保组件选项与实际发生的情况一致。
+          options.checks = checks.loaded
+          options.plugins = plugins.loaded.
             inject({}) { |h, name| h[name.to_s] = Options.plugins[name.to_s] || {}; h }
 
-        if browser_cluster_job_skip_states
+          if browser_cluster_job_skip_states
             state.browser_skip_states.merge browser_cluster_job_skip_states
+          end
+
+          state.set_status_message :suspending_plugins
+          @plugins.suspend
+
+          state.set_status_message :saving_snapshot, snapshot_path
+          Snapshot.dump(snapshot_path)
+          state.clear_status_messages
+
+          clean_up
+
+          state.set_status_message :snapshot_location, snapshot_path
+          print_info status_messages.first
+          state.suspended
         end
-
-        state.set_status_message :suspending_plugins
-        @plugins.suspend
-
-        state.set_status_message :saving_snapshot, snapshot_path
-        Snapshot.dump( snapshot_path )
-        state.clear_status_messages
-
-        clean_up
-
-        state.set_status_message :snapshot_location, snapshot_path
-        print_info status_messages.first
-        state.suspended
+      end
     end
-
-end
-
-end
-end
+  end
 end

@@ -7,27 +7,24 @@
 =end
 
 module Arachni
-module Platform::Fingerprinters
+  module Platform::Fingerprinters
 
-# Identifies Gunicorn resources.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-# @version 0.1
-class Gunicorn < Platform::Fingerprinter
-
-    def run
-        return update_platforms if server_or_powered_by_include?( 'gunicorn' )
+    # Identifies Gunicorn resources.
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    # @version 0.1
+    class Gunicorn < Platform::Fingerprinter
+      def run
+        return update_platforms if server_or_powered_by_include?("gunicorn")
 
         headers.keys.each do |header|
-            return update_platforms if header.start_with?( 'x-gunicorn')
+          return update_platforms if header.start_with?("x-gunicorn")
         end
-    end
+      end
 
-    def update_platforms
+      def update_platforms
         platforms << :python << :gunicorn
+      end
     end
-
-end
-
-end
+  end
 end
