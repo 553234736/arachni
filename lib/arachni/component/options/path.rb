@@ -10,14 +10,12 @@
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::Path < Arachni::Component::Options::Base
+  def valid?
+    return false if !super
+    File.exists?(effective_value)
+  end
 
-    def valid?
-        return false if !super
-        File.exists?( effective_value )
-    end
-
-    def type
-        :path
-    end
-
+  def type
+    :path
+  end
 end

@@ -73,6 +73,7 @@ module Arachni
           instance = create(name, options)
 
           exception_jail do
+            # 插件示例的准备操作
             instance.prepare
           end rescue next
 

@@ -10,17 +10,15 @@
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::Float < Arachni::Component::Options::Base
+  def normalize
+    Float(effective_value) rescue nil
+  end
 
-    def normalize
-        Float( effective_value ) rescue nil
-    end
+  def valid?
+    super && normalize
+  end
 
-    def valid?
-        super && normalize
-    end
-
-    def type
-        :float
-    end
-
+  def type
+    :float
+  end
 end

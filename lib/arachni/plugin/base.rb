@@ -29,6 +29,7 @@ class Base < Component::Base
     # @param    [Framework]   framework
     # @param    [Hash]        options
     #   Options to pass to the plugin.
+    # 传递给插件的选项。
     def initialize( framework, options )
         @framework = framework
         @options   = options

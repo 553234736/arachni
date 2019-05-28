@@ -6,20 +6,18 @@
     web site for more information on licensing and terms of use.
 =end
 
-require 'socket'
+require "socket"
 
 # Network address option.
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::Address < Arachni::Component::Options::Base
+  def valid?
+    return false if !super
+    !!IPSocket.getaddress(effective_value) rescue false
+  end
 
-    def valid?
-        return false if !super
-        !!IPSocket.getaddress( effective_value ) rescue false
-    end
-
-    def type
-        :address
-    end
-
+  def type
+    :address
+  end
 end

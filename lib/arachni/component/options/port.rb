@@ -10,18 +10,16 @@
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::Port < Arachni::Component::Options::Base
+  def normalize
+    effective_value.to_i
+  end
 
-    def normalize
-        effective_value.to_i
-    end
+  def valid?
+    return false if !super
+    (1..65535).include?(normalize)
+  end
 
-    def valid?
-        return false if !super
-        (1..65535).include?( normalize )
-    end
-
-    def type
-        :port
-    end
-
+  def type
+    :port
+  end
 end

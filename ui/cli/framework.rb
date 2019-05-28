@@ -25,6 +25,7 @@ module Arachni
       attr_reader :framework
 
       # Initializes the command line interface and the {Framework}.
+      # 初始化命令行接口和框架
       def initialize
         # Instantiate the big-boy!
         # 初始化
@@ -75,10 +76,12 @@ module Arachni
         print_status "Initializing..."
 
         # Won't work properly on MS Windows or when running in background.
+        # 在MS Windows上或在后台运行时无法正常工作。
         get_user_command if !Arachni.windows? && !@daemon_friendly
 
         begin
           # We may need to kill the audit so put it in a thread.
+          # 我们可能需要终止审计，所以把它放在一个线程中。
           @scan = Thread.new do
             @framework.run do
               hide_command_screen
@@ -108,9 +111,11 @@ module Arachni
 
           # If the user requested to abort the scan, wait for the thread
           # that takes care of the clean-up to finish.
+          # 如果用户请求中断扫描，等待线程清理完成
           if @cleanup_handler
             @cleanup_handler.join
           else
+            # 收集报告信息并打印
             generate_reports
           end
 
@@ -134,6 +139,7 @@ module Arachni
         end
       end
 
+      # 打印统计信息
       def print_statistics(unmute = false)
         statistics = @framework.statistics
 
@@ -253,6 +259,8 @@ module Arachni
         print_info(string.to_s, unmute)
       end
 
+      # 获取用户命令
+      # 根据代码调用来看，是在Windows平台显示控制台打印的情况下，新启动线程对当前的输入情况做监听
       def get_user_command
         Thread.new do
           command = gets.strip
@@ -261,6 +269,7 @@ module Arachni
 
           # Only accept the empty/toggle-screen command when the command
           # screen is not shown.
+          # 仅在未显示命令屏幕时接受empty / toggle-screen命令。
           return if !command_screen_shown? && !command.empty?
 
           case command
@@ -298,6 +307,7 @@ module Arachni
             verbose? ? verbose_off : verbose_on
 
             # Toggle debugging messages.
+            # 切换调试信息
           when /d(\d?)/
             hide_command_screen
 

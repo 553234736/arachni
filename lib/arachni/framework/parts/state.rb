@@ -366,7 +366,7 @@ module Arachni
           state.status = :preparing
           state.running = true
           @start_datetime = Time.now
-
+          # @plugins.run 为Arachni::Plugin::Manager.run
           Snapshot.restored? ? @plugins.restore : @plugins.run
         end
 

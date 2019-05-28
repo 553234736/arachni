@@ -10,18 +10,16 @@
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::Int < Arachni::Component::Options::Base
+  def normalize
+    effective_value.to_i
+  end
 
-    def normalize
-        effective_value.to_i
-    end
+  def valid?
+    return false if !super
+    effective_value.to_s =~ /^\d+$/
+  end
 
-    def valid?
-        return false if !super
-        effective_value.to_s =~ /^\d+$/
-    end
-
-    def type
-        :integer
-    end
-
+  def type
+    :integer
+  end
 end

@@ -102,17 +102,21 @@ module Arachni
     end
 
     # Starts the scan.
+    # 开始扫描
     #
     # @param   [Block]  block
     #   A block to call after the audit has finished but before running {#reporters}.
+    #   审计完成后但在运行{#reporters}之前要调用的块。
     def run(&block)
       prepare
+      # 处理信号量
       handle_signals
       return if aborted?
 
       # Catch exceptions so that if something breaks down or the user opted to
       # exit the reporters will still run with whatever results Arachni managed
       # to gather.
+      # 捕获异常，以便在出现故障或用户选择退出记录报告的情况下，仍然可以使用Arachni设法收集的任何结果。
       exception_jail(false) { audit }
 
       return if aborted? || suspended?

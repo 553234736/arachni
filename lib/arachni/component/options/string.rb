@@ -10,13 +10,11 @@
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::String < Arachni::Component::Options::Base
+  def normalize
+    effective_value.to_s
+  end
 
-    def normalize
-        effective_value.to_s
-    end
-
-    def type
-        :string
-    end
-
+  def type
+    :string
+  end
 end

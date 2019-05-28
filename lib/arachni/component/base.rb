@@ -7,58 +7,58 @@
 =end
 
 module Arachni
+  lib = Options.paths.lib
+  require lib + "component/output"
+  require lib + "component/utilities"
 
-lib = Options.paths.lib
-require lib + 'component/output'
-require lib + 'component/utilities'
+  module Component
 
-module Component
+    # Base check class to be extended by all components.
+    # 所有组件都要扩展的基本检查类。
+    #
+    # Defines basic structure and provides utilities.
+    # 定义基本结构并提供实用程序。
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    # @abstract
+    class Base
+      include Arachni # I hate having to keep typing this all the time.
+      include Component::Output
 
-# Base check class to be extended by all components.
-#
-# Defines basic structure and provides utilities.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-# @abstract
-class Base
-    include Arachni # I hate having to keep typing this all the time.
-    include Component::Output
+      include Component::Utilities
+      extend Component::Utilities
 
-    include Component::Utilities
-    extend  Component::Utilities
-
-    def shortname
+      def shortname
         self.class.shortname
-    end
+      end
 
-    class <<self
+      class << self
         include Arachni::Component::Output
 
         def fullname
-            @fullname ||= info[:name]
+          @fullname ||= info[:name]
         end
 
         def description
-            @description ||= info[:description]
+          @description ||= info[:description]
         end
 
         def author
-            @author ||= info[:author]
+          @author ||= info[:author]
         end
 
         def version
-            @version ||= info[:version]
+          @version ||= info[:version]
         end
 
-        def shortname=( shortname )
-            @shortname = shortname
+        def shortname=(shortname)
+          @shortname = shortname
         end
 
         def shortname
-            @shortname
+          @shortname
         end
+      end
     end
-
-end
-end
+  end
 end

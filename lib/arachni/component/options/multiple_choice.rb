@@ -11,30 +11,29 @@
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::MultipleChoice < Arachni::Component::Options::Base
 
-    # The list of potential valid values
-    attr_accessor :choices
+  # The list of potential valid values
+  attr_accessor :choices
 
-    def initialize( name, options = {} )
-        options  = options.dup
-        @choices = [options.delete(:choices)].flatten.compact.map(&:to_s)
-        super
-    end
+  def initialize(name, options = {})
+    options = options.dup
+    @choices = [options.delete(:choices)].flatten.compact.map(&:to_s)
+    super
+  end
 
-    def normalize
-        super.to_s
-    end
+  def normalize
+    super.to_s
+  end
 
-    def valid?
-        return false if !super
-        choices.include?( effective_value )
-    end
+  def valid?
+    return false if !super
+    choices.include?(effective_value)
+  end
 
-    def description
-        "#{@description} (accepted: #{choices.join( ', ' )})"
-    end
+  def description
+    "#{@description} (accepted: #{choices.join(", ")})"
+  end
 
-    def type
-        :multiple_choice
-    end
-
+  def type
+    :multiple_choice
+  end
 end

@@ -8,9 +8,7 @@
 
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::Object < Arachni::Component::Options::Base
-
-    def type
-        :object
-    end
-
+  def type
+    :object
+  end
 end

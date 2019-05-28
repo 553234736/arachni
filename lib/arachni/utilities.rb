@@ -417,7 +417,7 @@ module Utilities
     end
 
     # Wraps the `block` in exception handling code and runs it.
-    #
+    # 在异常处理代码中包装`block`并运行它。
     # @param    [Bool]  raise_exception
     #   Re-raise exception?
     # @param    [Block]     block

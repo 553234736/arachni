@@ -38,68 +38,67 @@
 # @see http://www.cgisecurity.com/csrf-faq.html
 # @see http://cwe.mitre.org/data/definitions/352.html
 class Arachni::Checks::CSRF < Arachni::Check::Base
+  def run
+    print_status "Looking for CSRF candidates..."
+    print_status "Simulating logged-out user."
 
-    def run
-        print_status 'Looking for CSRF candidates...'
-        print_status 'Simulating logged-out user.'
+    # request page without cookies, simulating a logged-out user
+    http.get(page.url, cookies: {}, no_cookie_jar: true) do |res|
+      # extract forms from the body of the response
+      logged_out = forms_from_response(res).reject { |f| f.inputs.empty? }
 
-        # request page without cookies, simulating a logged-out user
-        http.get( page.url, cookies: {}, no_cookie_jar: true ) do |res|
-            # extract forms from the body of the response
-            logged_out = forms_from_response( res ).reject { |f| f.inputs.empty? }
+      print_status "Found #{logged_out.size} context irrelevant forms."
 
-            print_status "Found #{logged_out.size} context irrelevant forms."
+      # get forms that are worthy of testing for CSRF i.e. appear only
+      # when the user is logged-in
+      candidates = page.forms - logged_out
 
-            # get forms that are worthy of testing for CSRF i.e. appear only
-            # when the user is logged-in
-            candidates = page.forms - logged_out
+      print_status "Found #{candidates.size} CSRF candidates."
 
-            print_status "Found #{candidates.size} CSRF candidates."
+      candidates.each do |form|
+        # If the form has no source then it was dynamically provided by
+        # some component, so skip it.
+        next if !form.source
 
-            candidates.each do |form|
-                # If the form has no source then it was dynamically provided by
-                # some component, so skip it.
-                next if !form.source
+        # If a form has a nonce then we're cool.
+        next if form.has_nonce?
 
-                # If a form has a nonce then we're cool.
-                next if form.has_nonce?
+        log_form(form)
+      end
+    end
+  end
 
-                log_form( form )
-            end
-        end
+  def log_form(form)
+    url = form.action
+    name = form.name_or_id
+
+    if audited?("#{url}::#{name}")
+      print_info "Skipping already audited form '#{name}' at '#{page.url}'"
+      return
     end
 
-    def log_form( form )
-        url  = form.action
-        name = form.name_or_id
+    audited("#{url}::#{name}")
 
-        if audited?( "#{url}::#{name}" )
-            print_info "Skipping already audited form '#{name}' at '#{page.url}'"
-            return
-        end
+    log(vector: form, proof: form.source)
+    print_ok "Found unprotected form with name '#{name}' at '#{page.url}'"
+  end
 
-        audited( "#{url}::#{name}" )
-
-        log( vector: form, proof: form.source )
-        print_ok "Found unprotected form with name '#{name}' at '#{page.url}'"
-    end
-
-    def self.info
-        {
-            name:        'CSRF',
-            description: %q{
+  def self.info
+    {
+      name: "CSRF",
+      description: %q{
 It uses differential analysis to determine which forms affect business logic and
 checks them for lack of anti-CSRF tokens.
 
 (Works best with a valid session.)
 },
-            elements:    [ Element::Form ],
-            author:      'Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com> ',
-            version:     '0.4',
+      elements: [Element::Form],
+      author: 'Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com> ',
+      version: "0.4",
 
-            issue:       {
-                name:            %q{Cross-Site Request Forgery},
-                description:     %q{
+      issue: {
+        name: %q{Cross-Site Request Forgery},
+        description: %q{
 In the majority of today's web applications, clients are required to submit forms
 which can perform sensitive operations.
 
@@ -133,15 +132,15 @@ _Manual verification may be required to check whether the submission will then
 perform a sensitive action, such as reset a password, modify user profiles, post
 content on a forum, etc._
 },
-                references:  {
-                    'Wikipedia'    => 'http://en.wikipedia.org/wiki/Cross-site_request_forgery',
-                    'OWASP'        => 'https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)',
-                    'CGI Security' => 'http://www.cgisecurity.com/csrf-faq.html'
-                },
-                tags:            %w(csrf rdiff form token),
-                cwe:             352,
-                severity:        Severity::HIGH,
-                remedy_guidance: %q{
+        references: {
+          "Wikipedia" => "http://en.wikipedia.org/wiki/Cross-site_request_forgery",
+          "OWASP" => "https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)",
+          "CGI Security" => "http://www.cgisecurity.com/csrf-faq.html",
+        },
+        tags: %w(csrf rdiff form token),
+        cwe: 352,
+        severity: Severity::HIGH,
+        remedy_guidance: %q{
 Based on the risk (determined by manual verification) of whether the form submission
 performs a sensitive action, the addition of anti-CSRF tokens may be required.
 
@@ -153,9 +152,8 @@ order to reject requests accompanied by invalid ones) and therefore prevent
 cyber-criminals from knowing, guessing or reusing them.
 
 _For examples of framework specific remediation options, please refer to the references._
-}
-            }
-        }
-    end
-
+},
+      },
+    }
+  end
 end

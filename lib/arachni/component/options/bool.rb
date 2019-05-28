@@ -10,29 +10,27 @@
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::Bool < Arachni::Component::Options::Base
+  TRUE_REGEX = /^(y|yes|t|1|true|on)$/i
+  VALID_REGEXP = /^(y|yes|n|no|t|f|0|1|true|false|on)$/i
 
-    TRUE_REGEX   = /^(y|yes|t|1|true|on)$/i
-    VALID_REGEXP = /^(y|yes|n|no|t|f|0|1|true|false|on)$/i
+  def valid?
+    return false if !super
+    effective_value.to_s.match(VALID_REGEXP)
+  end
 
-    def valid?
-        return false if !super
-        effective_value.to_s.match( VALID_REGEXP )
-    end
+  def normalize
+    effective_value.to_s =~ TRUE_REGEX
+  end
 
-    def normalize
-        effective_value.to_s =~ TRUE_REGEX
-    end
+  def true?
+    normalize
+  end
 
-    def true?
-        normalize
-    end
+  def false?
+    !true?
+  end
 
-    def false?
-        !true?
-    end
-
-    def type
-        :bool
-    end
-
+  def type
+    :bool
+  end
 end

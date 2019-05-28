@@ -10,18 +10,16 @@
 #
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Arachni::Component::Options::URL < Arachni::Component::Options::Base
+  def normalize
+    Arachni::URI(effective_value)
+  end
 
-    def normalize
-        Arachni::URI( effective_value )
-    end
+  def valid?
+    return false if !super
+    IPSocket.getaddress(normalize.host) rescue false
+  end
 
-    def valid?
-        return false if !super
-        IPSocket.getaddress( normalize.host ) rescue false
-    end
-
-    def type
-        :url
-    end
-
+  def type
+    :url
+  end
 end

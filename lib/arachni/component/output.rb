@@ -7,33 +7,33 @@
 =end
 
 module Arachni
-module Component
+  module Component
 
-# Provides output functionality to the checks via {Arachni::UI::Output},
-# prefixing the check name to the output message.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-module Output
-    include UI::Output
+    # Provides output functionality to the checks via {Arachni::UI::Output},
+    # prefixing the check name to the output message.
+    # 通过{Arachni::UI::Output}为检查提供输出功能，在检查名称前加上输出消息。
+    #
+    # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+    module Output
+      include UI::Output
 
-    def depersonalize_output
+      def depersonalize_output
         @depersonalize_output = true
-    end
+      end
 
-    def depersonalize_output?
+      def depersonalize_output?
         @depersonalize_output
-    end
+      end
 
-    def intercept_print_message( message )
+      def intercept_print_message(message)
         if self.class == Class
-            fullname = self.fullname
+          fullname = self.fullname
         else
-            fullname = self.class.fullname
+          fullname = self.class.fullname
         end
 
         depersonalize_output? ? message : "#{fullname}: #{message}"
+      end
     end
-
-end
-end
+  end
 end
