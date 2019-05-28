@@ -8,12 +8,13 @@
 
 module Arachni
 
-# Determines whether or not resources (URIs, pages, elements, etc.) are {#out?}
-# of the scan {OptionGroups::Scope scope}.
-#
-# @abstract
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-class Scope
+  # Determines whether or not resources (URIs, pages, elements, etc.) are {#out?}
+  # of the scan {OptionGroups::Scope scope}.
+  # 确定资源（URI，pages，elements等）是否为{OptionGroups::Scope scope}扫描的资源。
+  #
+  # @abstract
+  # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+  class Scope
 
     # {Scope} error namespace.
     #
@@ -25,7 +26,7 @@ class Scope
 
     # @return   [OptionGroups::Scope]
     def options
-        Options.scope
+      Options.scope
     end
 
     # @return   [Bool]
@@ -34,7 +35,5 @@ class Scope
     # @abstract
     def out?
     end
-
-end
-
+  end
 end

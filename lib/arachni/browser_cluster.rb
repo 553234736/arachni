@@ -358,6 +358,7 @@ module Arachni
     end
 
     # Used to sync operations between browser workers.
+    # 用于同步浏览器工作者之间的操作。
     #
     # @param    [Integer]   job_id
     #   Job ID.

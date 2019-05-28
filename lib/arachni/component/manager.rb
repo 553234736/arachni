@@ -27,8 +27,10 @@ module Arachni
 
     # Handles checks, reports, path extractor checks, plug-ins, pretty much
     # every modular aspect of the framework.
+    # 处理检查，报告，路径提取器检查，插件，几乎框架的每个模块化方面。
     #
     # It is usually extended to fill-in for system specific functionality.
+    # 它通常扩展为补充系统特定功能。
     #
     # @example
     #
@@ -90,16 +92,20 @@ module Arachni
 
       # @return   [String]
       #   The path to the component library/directory.
+      #   组件库/目录的路径。
       attr_reader :lib
 
       # @return [Module]
       #   Namespace under which all components are directly defined.
+      #   命名空间，直接定义所有组件。
       attr_reader :namespace
 
       # @param    [String]    lib
       #   The path to the component library/directory.
+      #   组件库/目录的路径。
       # @param    [Module,Class]    namespace
       #   Namespace under which all components are directly defined.
+      #   命名空间，直接定义所有组件。
       def initialize(lib, namespace)
         @lib = lib
         @namespace = namespace
@@ -110,6 +116,7 @@ module Arachni
       end
 
       # Loads components.
+      # 加载指定的组件
       #
       # @param    [Array<String,Symbol>]    components
       #   Components to load.
@@ -121,6 +128,7 @@ module Arachni
       end
 
       # Loads all components, equivalent of `load '*'`.
+      # 加载所有的组件
       #
       # @return   [Array]
       #   Names of loaded components.
@@ -130,6 +138,7 @@ module Arachni
 
       # Loads components by the tags found in the `Hash` returned by their `.info`
       # method (tags should be in either: `:tags` or `:issue[:tags]`).
+      # 根据.info中的hash标签tag来加载
       #
       # @param    [Array] tags
       #   Tags to look for in components.
@@ -157,6 +166,7 @@ module Arachni
       end
 
       # Validates and prepares options for a given component.
+      # 校验并准备提供给组建的额参数
       #
       # @param    [String]    component_name
       #   Name of the component.
@@ -218,6 +228,7 @@ module Arachni
       # It parses the component array making sure that its structure is valid
       # and takes into consideration {WILDCARD wildcard} and {EXCLUDE exclusion}
       # modifiers.
+      # 它解析组件数组，确保其结构有效并考虑{WILDCARD通配符}和{EXCLUDE排除}修饰符。
       #
       # @param    [Array<String,Symbol>]    components
       #   Component names.

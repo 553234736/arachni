@@ -8,10 +8,10 @@
 
 module Arachni
 
-# Stores and provides access to the data of the system.
-#
-# @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
-class Data
+  # Stores and provides access to the data of the system.
+  #
+  # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
+  class Data
 
     # {Data} error namespace.
     #
@@ -21,89 +21,88 @@ class Data
     class Error < Arachni::Error
     end
 
-    require_relative 'data/framework'
-    require_relative 'data/session'
-    require_relative 'data/issues'
-    require_relative 'data/plugins'
+    require_relative "data/framework"
+    require_relative "data/session"
+    require_relative "data/issues"
+    require_relative "data/plugins"
 
-class <<self
+    class << self
 
-    # @return     [Framework]
-    attr_accessor :framework
+      # @return     [Framework]
+      attr_accessor :framework
 
-    # @return     [Session]
-    attr_accessor :session
+      # @return     [Session]
+      attr_accessor :session
 
-    # @return     [Issues]
-    attr_accessor :issues
+      # @return     [Issues]
+      attr_accessor :issues
 
-    # @return     [Plugins]
-    attr_accessor :plugins
+      # @return     [Plugins]
+      attr_accessor :plugins
 
-    def reset
+      def reset
         @framework = Framework.new
-        @session   = Session.new
-        @issues    = Issues.new
-        @plugins   = Plugins.new
-    end
+        @session = Session.new
+        @issues = Issues.new
+        @plugins = Plugins.new
+      end
 
-    def statistics
+      def statistics
         stats = {}
         each do |attribute|
-            stats[attribute] = send(attribute).statistics
+          stats[attribute] = send(attribute).statistics
         end
         stats
-    end
+      end
 
-    # @param    [String]    directory
-    #   Location of the dump directory.
-    # @return   [String]
-    #   Location of the dump directory.
-    def dump( directory )
-        FileUtils.mkdir_p( directory )
+      # @param    [String]    directory
+      #   Location of the dump directory.
+      # @return   [String]
+      #   Location of the dump directory.
+      def dump(directory)
+        FileUtils.mkdir_p(directory)
 
         each do |name, state|
-            state.dump( "#{directory}/#{name}/" )
+          state.dump("#{directory}/#{name}/")
         end
 
         directory
-    end
+      end
 
-    # @param    [String]    directory
-    #   Location of the dump directory.
-    # @return   [Data]     `self`
-    def load( directory )
+      # @param    [String]    directory
+      #   Location of the dump directory.
+      # @return   [Data]     `self`
+      def load(directory)
         each do |name, state|
-            send( "#{name}=", state.class.load( "#{directory}/#{name}/" ) )
+          send("#{name}=", state.class.load("#{directory}/#{name}/"))
         end
 
         self
-    end
+      end
 
-    # Clears all data.
-    def clear
+      # Clears all data.
+      def clear
         each { |_, state| state.clear }
         self
-    end
+      end
 
-    private
+      private
 
-    def each( &block )
+      def each(&block)
         accessors.each do |attr|
-            block.call attr, send( attr )
+          block.call attr, send(attr)
         end
-    end
+      end
 
-    def accessors
+      def accessors
         instance_variables.map do |ivar|
-            attribute = "#{ivar.to_s.gsub('@','')}"
-            next if !methods.include?( :"#{attribute}=" )
-            attribute.to_sym
+          attribute = "#{ivar.to_s.gsub("@", "")}"
+          next if !methods.include?(:"#{attribute}=")
+          attribute.to_sym
         end.compact
+      end
     end
 
-end
-
-reset
-end
+    reset
+  end
 end

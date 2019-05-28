@@ -11,30 +11,29 @@
 # @author Tasos "Zapotek" Laskos <tasos.laskos@arachni-scanner.com>
 class Object
 
-    # Deep-clones self using a Marshal dump-load.
-    #
-    # @return   [Object]
-    #   Duplicate of self.
-    def deep_clone
-        Marshal.load( Marshal.dump( self ) )
-    end
+  # Deep-clones self using a Marshal dump-load.
+  # 深拷贝对象
+  # @return   [Object]
+  #   Duplicate of self.
+  def deep_clone
+    Marshal.load(Marshal.dump(self))
+  end
 
-    def rpc_clone
-        if self.class.respond_to?( :from_rpc_data )
-            self.class.from_rpc_data(
-                Arachni::RPC::Serializer.serializer.load(
-                    Arachni::RPC::Serializer.serializer.dump( to_rpc_data_or_self )
-                )
-            )
-        else
-            Arachni::RPC::Serializer.serializer.load(
-                Arachni::RPC::Serializer.serializer.dump( self )
-            )
-        end
+  def rpc_clone
+    if self.class.respond_to?(:from_rpc_data)
+      self.class.from_rpc_data(
+        Arachni::RPC::Serializer.serializer.load(
+          Arachni::RPC::Serializer.serializer.dump(to_rpc_data_or_self)
+        )
+      )
+    else
+      Arachni::RPC::Serializer.serializer.load(
+        Arachni::RPC::Serializer.serializer.dump(self)
+      )
     end
+  end
 
-    def to_rpc_data_or_self
-        respond_to?( :to_rpc_data ) ? to_rpc_data : self
-    end
-
+  def to_rpc_data_or_self
+    respond_to?(:to_rpc_data) ? to_rpc_data : self
+  end
 end

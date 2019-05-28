@@ -93,32 +93,32 @@ module Arachni
             # we'll have some context in the metadata which can help us
             # optimize DOM audits.
             {
-                  Element::Link => proc { audit.links? && !!page.links.find { |e| e.inputs.any? } },
-                  Element::Link::DOM => proc { audit.link_doms? && !!page.links.find(&:dom) },
-                  Element::Form => proc { audit.forms? && !!page.forms.find { |e| e.inputs.any? } },
-                  Element::Form::DOM => proc {
-                    (ignore_dom_depth || page.dom.depth > 0) &&
-                      audit.form_doms? && page.has_script? && !!page.forms.find(&:dom)
-                  },
-                  Element::Cookie => proc { audit.cookies? && page.cookies.any? },
-                  Element::Cookie::DOM => proc {
-                    (ignore_dom_depth || page.dom.depth > 0) &&
-                      audit.cookie_doms? && page.has_script? && page.cookies.any?
-                  },
-                  Element::Header => proc { audit.headers? && page.headers.any? },
-                  Element::LinkTemplate => proc { audit.link_templates? && page.link_templates.find { |e| e.inputs.any? } },
-                  Element::LinkTemplate::DOM => proc { audit.link_template_doms? && !!page.link_templates.find(&:dom) },
-                  Element::JSON => proc { audit.jsons? && page.jsons.find { |e| e.inputs.any? } },
-                  Element::XML => proc { audit.xmls? && page.xmls.find { |e| e.inputs.any? } },
-                  Element::UIInput => false,
-                  Element::UIInput::DOM => proc { audit.ui_inputs? && page.ui_inputs.any? },
-                  Element::UIForm => false,
-                  Element::UIForm::DOM => proc { audit.ui_forms? && page.ui_forms.any? },
-                  Element::Body => !page.body.empty?,
-                  Element::GenericDOM => page.has_script?,
-                  Element::Path => true,
-                  Element::Server => true,
-                }.each do |type, decider|
+              Element::Link => proc { audit.links? && !!page.links.find { |e| e.inputs.any? } },
+              Element::Link::DOM => proc { audit.link_doms? && !!page.links.find(&:dom) },
+              Element::Form => proc { audit.forms? && !!page.forms.find { |e| e.inputs.any? } },
+              Element::Form::DOM => proc {
+                (ignore_dom_depth || page.dom.depth > 0) &&
+                  audit.form_doms? && page.has_script? && !!page.forms.find(&:dom)
+              },
+              Element::Cookie => proc { audit.cookies? && page.cookies.any? },
+              Element::Cookie::DOM => proc {
+                (ignore_dom_depth || page.dom.depth > 0) &&
+                  audit.cookie_doms? && page.has_script? && page.cookies.any?
+              },
+              Element::Header => proc { audit.headers? && page.headers.any? },
+              Element::LinkTemplate => proc { audit.link_templates? && page.link_templates.find { |e| e.inputs.any? } },
+              Element::LinkTemplate::DOM => proc { audit.link_template_doms? && !!page.link_templates.find(&:dom) },
+              Element::JSON => proc { audit.jsons? && page.jsons.find { |e| e.inputs.any? } },
+              Element::XML => proc { audit.xmls? && page.xmls.find { |e| e.inputs.any? } },
+              Element::UIInput => false,
+              Element::UIInput::DOM => proc { audit.ui_inputs? && page.ui_inputs.any? },
+              Element::UIForm => false,
+              Element::UIForm::DOM => proc { audit.ui_forms? && page.ui_forms.any? },
+              Element::Body => !page.body.empty?,
+              Element::GenericDOM => page.has_script?,
+              Element::Path => true,
+              Element::Server => true,
+            }.each do |type, decider|
               next if restrict_to_elements.any? && !restrict_to_elements.include?(type)
 
               return true if elements.include?(type) &&
