@@ -1,14 +1,13 @@
 module Selenium
-module WebDriver
-class Element
+  module WebDriver
+    class Element
+      def html
+        @bridge.execute_script("return arguments[0].outerHTML", self)
+      end
 
-    def html
-        @bridge.execute_script( 'return arguments[0].outerHTML', self )
-    end
-
-    def opening_tag
+      def opening_tag
         @bridge.execute_script(
-            %Q[
+          %Q[
                 var s = '<' + arguments[0].tagName.toLowerCase();
                 var attrs = arguments[0].attributes;
                 for( var l = 0; l < attrs.length; ++l ) {
@@ -17,20 +16,20 @@ class Element
                 s += '>'
                 return s;
             ],
-            self
+          self
         )
-    end
+      end
 
-    def events
-        (@bridge.execute_script( 'return arguments[0]._arachni_events;', self ) || []).
-            map { |event, fn| [event.to_sym, fn] } |
-            (::Arachni::Browser::Javascript.events.flatten.map(&:to_s) & attributes).
-                map { |event| [event.to_sym, attribute( event )] }
-    end
+      def events
+        (@bridge.execute_script("return arguments[0]._arachni_events;", self) || []).
+          map { |event, fn| [event.to_sym, fn] } |
+          (::Arachni::Browser::Javascript.events.flatten.map(&:to_s) & attributes).
+            map { |event| [event.to_sym, attribute(event)] }
+      end
 
-    def attributes
+      def attributes
         @bridge.execute_script(
-            %Q[
+          %Q[
                 var s = [];
                 var attrs = arguments[0].attributes;
                 for( var l = 0; l < attrs.length; ++l ) {
@@ -38,11 +37,9 @@ class Element
                 }
                 return s;
             ],
-            self
+          self
         )
+      end
     end
-
-
-end
-end
+  end
 end
